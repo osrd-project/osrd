@@ -119,7 +119,7 @@ paths:
         400:
           description: The request body is invalid
 
-  /simulation:
+  /standalone_simulation:
     post:
       tags:
         - simulation
@@ -689,6 +689,8 @@ components:
         infra:
           type: string
           example: "infraID"
+        rolling_stocks:
+          $ref: "#/components/schemas/RollingStock"
         waypoints:
           type: array
           minItems: 2
