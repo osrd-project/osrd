@@ -686,6 +686,9 @@ components:
         - waypoints
         - rolling_stocks
       properties:
+        expected_version:
+          type: string
+          example: "1"
         infra:
           type: string
           example: "infraID"
@@ -713,6 +716,9 @@ components:
           $ref: "#/components/schemas/RollingStock"
     STDCMRequest:
       properties:
+        expected_version:
+          type: string
+          example: "1"
         infra:
           type: string
           example: "infraID"
@@ -777,6 +783,9 @@ components:
         - train_schedules
         - trains_path
       properties:
+        expected_version:
+          type: string
+          example: "1"
         infra:
           type: string
           example: "infraID"
