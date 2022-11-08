@@ -84,30 +84,6 @@ paths:
                   $ref: "#/components/schemas/PathfindingRoutesResult"
         400:
           description: The request body is invalid
-  /pathfinding/tracks:
-    post:
-      tags:
-        - pathfinding
-      summary: Find a path in the track section graph that passes through waypoints.
-      operationId: pathfinding_tracks
-      requestBody:
-        description: Infrastructure id and waypoints
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/PathfindingRequest"
-        required: true
-      responses:
-        200:
-          description: Path found
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: "#/components/schemas/PathfindingTracksResult"
-        400:
-          description: The request body is invalid
-
   /stdcm:
     post:
       tags:
@@ -300,20 +276,6 @@ components:
             $ref: "#/components/schemas/TrackSectionRange"
       example:
         routes: ["route_foo", "route_bar"]
-        track_sections:
-          - track_section: "track_foo"
-            begin_position: 4.2
-            end_position: 178.3
-    PathfindingTracksResult:
-      required:
-        - track_sections
-      properties:
-        track_sections:
-          type: array
-          minItems: 1
-          items:
-            $ref: "#/components/schemas/TrackSectionRange"
-      example:
         track_sections:
           - track_section: "track_foo"
             begin_position: 4.2
