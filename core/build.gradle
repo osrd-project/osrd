@@ -32,6 +32,8 @@ repositories {
 }
 
 dependencies {
+    implementation project(':osrd-railjson')
+
     // kotlin
     implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib'  // Apache 2.0
     implementation group: 'org.jetbrains.kotlinx', name: 'kotlinx-coroutines-core', version: '1.6.+'  // Apache 2.0
