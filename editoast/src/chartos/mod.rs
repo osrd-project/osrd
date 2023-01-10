@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 use crate::db_connection::RedisPool;
 pub use bounding_box::{BoundingBox, InvalidationZone};
-pub use map_layers::MapLayers;
+pub use map_layers::{Layer, MapLayers};
 use redis::RedisError;
 use rocket_db_pools::deadpool_redis::redis::cmd;
 
