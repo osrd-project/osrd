@@ -1,6 +1,7 @@
 mod edition;
 mod errors;
 mod objects;
+mod pathfinding;
 mod railjson;
 mod routes;
 
@@ -43,6 +44,7 @@ pub fn routes() -> Vec<Route> {
     .chain(objects::routes())
     .chain(railjson::routes())
     .chain(routes::routes())
+    .chain(pathfinding::routes())
     .collect()
 }
 
