@@ -68,8 +68,12 @@ async fn invalidate_cache(
     redis_pool: &RedisPool,
     layer_name: &str,
     infra_id: i32,
-    tiles_to_invalidate: HashMap<String, Tile>,
+    tiles_to_invalidate: HashMap<String, Vec<Tile>>,
 ) {
+    let mut keys_to_deleted: Vec<String> = Vec::new();
+    tiles_to_invalidate.iter().map(|view_name, tiles| {
+        let cache_location = get_view_cache_prefix()
+    })
 }
 
 /// Invalidate a zone for all chartos layers
@@ -110,7 +114,7 @@ async fn invalidate_layer_zone(
         if count_tiles(18, bbox) > max_tiles {
             invalidate_full_layer_cache(redis_pool, layer_name, infra_id, Some(view_name)).await?;
         } else {
-            affected_tiles.insert(view_name.into(), get_tiles_to_invalidate(12, &bbox));
+            affected_tiles.insert(get_view_cache_prefix(layer_name, infra_id, view_name), get_tiles_to_invalidate(12, &bbox));
         }
     }
     if !affected_tiles.is_empty() {
