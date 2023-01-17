@@ -64,6 +64,14 @@ async fn invalidate_full_layer_cache(
     Ok(number_of_deleted_keys)
 }
 
+async fn invalidate_cache(
+    redis_pool: &RedisPool,
+    layer_name: &str,
+    infra_id: i32,
+    tiles_to_invalidate: HashMap<String, Tile>,
+) {
+}
+
 /// Invalidate a zone for all chartos layers
 /// If the zone is invalide nothing is done
 pub async fn invalidate_zone(
@@ -97,21 +105,16 @@ async fn invalidate_layer_zone(
     chartos_config: &ChartosConfig,
 ) -> Result<(), RedisError> {
     let max_tiles = 120;
-    let affected_tiles: HashMap<String, Vec<Tile>> = [("geo", zone.geo), ("sch", zone.sch)]
-        .iter()
-        .map(|zone| {
-            let (view_name, bbox) = zone;
-            if count_tiles(18, bbox) > max_tiles {
-                invalidate_full_layer_cache(redis_pool, layer_name, infra_id, Some(*view_name))
-                    .await?;
-                None
-            } else {
-                (view_name, get_tiles_to_invalidate(12, bbox))
-            };
-        })
-        .collect();
+    let mut affected_tiles: HashMap<String, Vec<Tile>> = HashMap::new();
+    for (view_name, bbox) in [("geo", &zone.geo), ("sch", &zone.sch)] {
+        if count_tiles(18, bbox) > max_tiles {
+            invalidate_full_layer_cache(redis_pool, layer_name, infra_id, Some(view_name)).await?;
+        } else {
+            affected_tiles.insert(view_name.into(), get_tiles_to_invalidate(12, &bbox));
+        }
+    }
     if !affected_tiles.is_empty() {
-        invalidate_cache
+        // invalidate_cache
     }
     Ok(())
 
