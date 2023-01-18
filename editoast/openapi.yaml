@@ -31,6 +31,19 @@ paths:
                 required:
                   - git_describe
 
+  /layers/info/:
+    get:
+      summary: Get layers descriptions
+      responses:
+        200:
+          description: Successful Response
+          content:
+            application/json:
+              schema: 
+                type: array
+                items:
+                  $ref: "#/components/schemas/Layer"
+
   /infra/:
     get:
       tags:
@@ -517,36 +530,9 @@ paths:
                   discriminator:
                     propertyName: type
                   oneOf:
-                    - type: object
-                      description: Error when the route id couldn't be found
-                      properties:
-                        type: { type: string, enum: ["NotFound"] }
-                    - type: object
-                      description: Error when the route path couldn't be computed
-                      properties:
-                        type: { type: string, enum: ["CantComputePath"] }
-                    - type: object
-                      description: Track ranges
-                      properties:
-                        type: { type: string, enum: ["Computed"] }
-                        track_ranges:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              track:
-                                type: string
-                                example: 01234567-89ab-cdef-0123-456789abcdef
-                              begin:
-                                type: number
-                                format: float
-                              end:
-                                type: number
-                                format: float
-                                example: 100.
-                              applicable_directions:
-                                type: string
-                                enum: [START_TO_STOP, STOP_TO_START]
+                    - $ref: "#/components/schemas/ComputeTrackRangesNotFoundError"
+                    - $ref: "#/components/schemas/ComputeTrackRangesCantComputePathError"
+                    - $ref: "#/components/schemas/TrackRanges"
 
   /infra/{id}/objects/{object_type}/:
     post:
@@ -618,6 +604,46 @@ components:
           format: date
         locked:
           type: boolean
+
+    Layer:
+      properties:
+        name:
+          type: string
+        table_name:
+          type: string
+        views:
+          type: array
+          items:
+            $ref: "#/components/schemas/MapLayerView"
+        id_field:
+          type: string
+        attribution:
+          type: string
+
+    MapLayerView:
+      properties:
+        name:
+          type: string
+        on_field:
+          type: string
+        data_expr:
+          type: array
+          items:
+            type: string
+        exclude_fields:
+          type: array
+          items:
+            type: string
+        joins:
+          type: array
+          items:
+            type: string
+        cache_duration:
+          type: integer
+        where:
+          type: array
+          items:
+            type: string
 
     ObjectType:
       type: string
@@ -805,3 +831,40 @@ components:
             is_warning: false
             obj_id: 61205924-6667-11e3-81ff-01f464e0362d
             obj_type: TrackSection
+
+    TrackRanges:
+      type: object
+      description: Track ranges
+      properties:
+        type: { type: string, enum: ["Computed"] }
+        track_ranges:
+          type: array
+          items:
+            type: object
+            properties:
+              track:
+                type: string
+                example: 01234567-89ab-cdef-0123-456789abcdef
+              begin:
+                type: number
+                format: float
+              end:
+                type: number
+                format: float
+                example: 100.
+              applicable_directions:
+                type: string
+                enum: [START_TO_STOP, STOP_TO_START]
+                
+    ComputeTrackRangesNotFoundError:
+      type: object
+      description: Error when the route id couldn't be found
+      properties:
+        type: { type: string, enum: ["NotFound"] }
+
+    ComputeTrackRangesCantComputePathError:
+      type: object
+      description: Error when the route path couldn't be computed
+      properties:
+        type: { type: string, enum: ["CantComputePath"] }
+

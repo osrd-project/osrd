@@ -1,11 +1,12 @@
 mod bounding_box;
 mod layer_cache;
+mod map_layers;
 
 use std::collections::HashMap;
 
 use crate::db_connection::RedisPool;
-pub use bounding_box::BoundingBox;
-pub use bounding_box::InvalidationZone;
+pub use bounding_box::{BoundingBox, InvalidationZone};
+pub use map_layers::MapLayers;
 use redis::RedisError;
 use rocket_db_pools::deadpool_redis::redis::cmd;
 
