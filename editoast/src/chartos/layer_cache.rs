@@ -7,9 +7,9 @@ use super::BoundingBox;
 #[allow(dead_code)]
 /// Coordinates and level of zoom in a cartesian coordinates system
 pub struct Tile {
-    x: u64,
-    y: u64,
-    z: u64,
+    pub x: u64,
+    pub y: u64,
+    pub z: u64,
 }
 
 #[allow(dead_code)]

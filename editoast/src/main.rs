@@ -18,7 +18,7 @@ mod views;
 use chashmap::CHashMap;
 use clap::Parser;
 use client::{
-    ChartosConfig, ClearArgs, Client, Commands, GenerateArgs, ImportRailjsonArgs, PostgresConfig,
+    ClearArgs, Client, Commands, GenerateArgs, ImportRailjsonArgs, PostgresConfig,
     RedisConfig, RunserverArgs,
 };
 use colored::*;
@@ -49,13 +49,12 @@ async fn main() {
 
 async fn run() -> Result<(), Box<dyn Error + Send + Sync>> {
     let client = Client::parse();
-    let chartos_config = client.chartos_config;
     let pg_config = client.postgres_config;
     let redis_config = client.redis_config;
 
     match client.command {
-        Commands::Runserver(args) => runserver(args, pg_config, chartos_config, redis_config).await,
-        Commands::Generate(args) => generate(args, pg_config, chartos_config).await,
+        Commands::Runserver(args) => runserver(args, pg_config, redis_config).await,
+        Commands::Generate(args) => generate(args, pg_config).await,
         Commands::Clear(args) => clear(args, pg_config),
         Commands::ImportRailjson(args) => import_railjson(args, pg_config),
     }
@@ -64,7 +63,6 @@ async fn run() -> Result<(), Box<dyn Error + Send + Sync>> {
 pub fn create_server(
     runserver_config: &RunserverArgs,
     pg_config: &PostgresConfig,
-    chartos_config: ChartosConfig,
     redis_config: &RedisConfig,
 ) -> Rocket<Build> {
     // Config server
@@ -94,7 +92,6 @@ pub fn create_server(
         .attach(RedisPool::init())
         .attach(cors::Cors)
         .manage(Arc::<CHashMap<i32, InfraCache>>::default())
-        .manage(chartos_config);
 
     // Mount routes
     for (base, routes) in views::routes() {
@@ -107,11 +104,10 @@ pub fn create_server(
 async fn runserver(
     args: RunserverArgs,
     pg_config: PostgresConfig,
-    chartos_config: ChartosConfig,
     redis_config: RedisConfig,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("Building server...");
-    let rocket = create_server(&args, &pg_config, chartos_config, &redis_config);
+    let rocket = create_server(&args, &pg_config, &redis_config);
     // Run server
     println!("Running server...");
     let _rocket = rocket.launch().await?;
@@ -123,7 +119,6 @@ async fn runserver(
 async fn generate(
     args: GenerateArgs,
     pg_config: PostgresConfig,
-    chartos_config: ChartosConfig,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut conn = PgConnection::establish(&pg_config.url()).expect("Error while connecting DB");
 
@@ -149,7 +144,7 @@ async fn generate(
         );
         let infra_cache = InfraCache::load(&mut conn, &infra)?;
         if infra.refresh(&mut conn, args.force, &infra_cache)? {
-            chartos::invalidate_all(infra.id, &chartos_config).await;
+            chartos::invalidate_all(infra.id).await;
             println!("✅ Infra {}[{}] generated!", infra.name.bold(), infra.id);
         } else {
             println!(
