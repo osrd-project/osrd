@@ -13,21 +13,6 @@ use self::layer_cache::count_tiles;
 use self::layer_cache::get_tiles_to_invalidate;
 use self::layer_cache::Tile;
 
-const LAYERS: [&str; 12] = [
-    "track_sections",
-    "signals",
-    "speed_sections",
-    "track_section_links",
-    "switches",
-    "detectors",
-    "buffer_stops",
-    "routes",
-    "operational_points",
-    "catenaries",
-    "lpv_panels",
-    "errors",
-];
-
 pub fn get_layer_cache_prefix(layer_name: &str, infra_id: i32) -> String {
     format!("chartis.layer.{layer_name}.infra_{infra_id}")
 }
@@ -106,9 +91,9 @@ pub async fn invalidate_zone(
 }
 
 /// Invalidate all chartos layers
-pub async fn invalidate_all(redis_pool: &RedisPool, infra_id: i32) -> Result<(), RedisError> {
-    for layer in LAYERS {
-        invalidate_layer(redis_pool, infra_id, layer).await?;
+pub async fn invalidate_all(redis_pool: &RedisPool,  infra_id: i32) -> Result<(), RedisError> {
+    for layer_name in LAYERS {
+        invalidate_layer(redis_pool, infra_id, layer_name).await?;
     }
     Ok(())
 }
