@@ -15,9 +15,11 @@ pub async fn delete(
     redis_pool: &RedisPool,
     keys_to_delete: Vec<String>,
 ) -> Result<u64, RedisError> {
-    cmd("DEL")
-        .arg(keys_to_delete.join(" "))
-        .query_async::<_, u64>(&mut redis_pool.get().await.unwrap())
+    let mut del = cmd("DEL");
+    for key in keys_to_delete {
+        del.arg(key);
+    }
+    del.query_async::<_, u64>(&mut redis_pool.get().await.unwrap())
         .await
 }
 
@@ -53,17 +55,24 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_write_and_delete_key() {
+    async fn test_set_list_and_delete_key() {
         let redis_pool = create_redis_pool();
+        // Check redis empty
         let test_keys = keys(&redis_pool, "test_*").await.unwrap();
         assert!(test_keys.is_empty());
+        // Add two keys and check presence
         set(&redis_pool, "test_1", "value_1").await.unwrap();
+        set(&redis_pool, "test_2", "value_2").await.unwrap();
         let test_keys = keys(&redis_pool, "test_*").await.unwrap();
-        assert_eq!(test_keys, vec!["test_1"]);
-        let result = delete(&redis_pool, vec![String::from("test_1")])
-            .await
-            .unwrap();
-        assert_eq!(result, 1);
+        assert_eq!(test_keys, vec!["test_2", "test_1"]);
+        // Delete two keys and check absence
+        let result = delete(
+            &redis_pool,
+            vec![String::from("test_1"), String::from("test_2")],
+        )
+        .await
+        .unwrap();
+        assert_eq!(result, 2);
         let test_keys = keys(&redis_pool, "test_*").await.unwrap();
         assert!(test_keys.is_empty());
     }

@@ -2,14 +2,14 @@ use core::f64::consts::PI;
 
 use super::BoundingBox;
 
-/// Coordinates and level of zoom in a cartesian coordinates system
+/// Web mercator coordinates
 pub struct Tile {
     pub x: u64,
     pub y: u64,
     pub z: u64,
 }
 
-/// North-West and South-East coordinates in a cartesian coordinates system
+/// North-West and South-East web mercator coordinates
 struct NwSeCoordinates {
     nw_x: u64,
     nw_y: u64,
@@ -17,7 +17,7 @@ struct NwSeCoordinates {
     se_y: u64,
 }
 
-/// Computes coordinates in a cartesian system
+/// Computes web mercator coordinates
 ///
 /// Bounding box documentation: <https://wiki.openstreetmap.org/wiki/Bounding_Box>
 ///
@@ -34,7 +34,7 @@ fn xy_from_latitude_longitude(latitude: f64, longitude: f64, zoom: u64) -> (u64,
     )
 }
 
-/// Gets North-West and South-East cartesian coordinates from a bounding box and zoom value
+/// Gets North-West and South-East web mercator coordinates from a bounding box and zoom value
 ///
 /// Panics if the bbox is invalid
 fn get_nw_se_coordinates(zoom: u64, bbox: &BoundingBox) -> NwSeCoordinates {
