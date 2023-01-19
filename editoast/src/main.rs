@@ -60,7 +60,6 @@ async fn run() -> Result<(), Box<dyn Error + Send + Sync>> {
         Commands::ImportRailjson(args) => import_railjson(args, pg_config),
     }
 }
-
 /// Create a rocket server given the config
 pub fn create_server(
     runserver_config: &RunserverArgs,
