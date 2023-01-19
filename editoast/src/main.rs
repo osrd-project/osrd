@@ -152,7 +152,12 @@ async fn generate(
         if infra.refresh(&mut conn, args.force, &infra_cache)? {
             let mut cfg = RedisPoolConfig::from_url(redis_config.redis_url);
             let redis_pool = cfg.create_pool(Some(Runtime::Tokio1)).unwrap();
-            chartos::invalidate_all(redis_pool, infra.id).await;
+            chartos::invalidate_all(
+                redis_pool,
+                &MapLayers::parse().layers.keys().cloned().collect(),
+                infra.id,
+            )
+            .await;
             println!("✅ Infra {}[{}] generated!", infra.name.bold(), infra.id);
         } else {
             println!(
