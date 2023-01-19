@@ -16,7 +16,7 @@ use self::layer_cache::{
 };
 use self::redis_utils::{delete, keys};
 
-/// Invalidate layer cache for a specific infra and view if provided
+/// Invalidates layer cache for a specific infra and view if provided
 ///
 /// # Arguments
 ///
@@ -40,7 +40,7 @@ async fn invalidate_full_layer_cache(
     Ok(number_of_deleted_keys)
 }
 
-/// Invalidate cache for specific
+/// Invalidates cache for specific
 ///
 /// # Arguments
 ///
@@ -60,7 +60,7 @@ async fn invalidate_cache_tiles(
     Ok(number_of_deleted_keys)
 }
 
-/// Invalidate a infra specific layer zone
+/// Invalidates a infra specific layer zone
 ///
 /// # Arguments
 ///
@@ -92,7 +92,7 @@ async fn invalidate_layer_zone(
     Ok(())
 }
 
-/// Invalidate a zone for all map layers
+/// Invalidates a zone for all map layers
 /// If the zone is invalide nothing is done
 ///
 /// # Arguments
@@ -102,7 +102,7 @@ async fn invalidate_layer_zone(
 /// * `infra_id` - Infra to on which layers must be invalidated
 /// * `zone` - Zone to invalidate
 ///
-/// panic if fail
+/// Panics if fail
 pub async fn invalidate_zone(
     redis_pool: &RedisPool,
     layers: &Vec<String>,
@@ -120,7 +120,7 @@ pub async fn invalidate_zone(
     }
 }
 
-/// Invalidate all map layers
+/// Invalidates all map layers of a specific infra
 ///
 /// # Arguments
 ///
@@ -128,7 +128,7 @@ pub async fn invalidate_zone(
 /// * `layers` - Layers to invalidate
 /// * `infra_id` - Infra to on which layers must be invalidated
 ///
-/// panic if fail
+/// Panics if fail
 pub async fn invalidate_all(redis_pool: &RedisPool, layers: &Vec<String>, infra_id: i32) {
     for layer_name in layers {
         let result = invalidate_full_layer_cache(redis_pool, infra_id, layer_name, None).await;
