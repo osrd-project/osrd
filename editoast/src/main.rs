@@ -15,12 +15,13 @@ mod schema;
 mod tables;
 mod views;
 
+use crate::schema::RailJson;
 use chartos::MapLayers;
 use chashmap::CHashMap;
 use clap::Parser;
 use client::{
-    ClearArgs, Client, Commands, GenerateArgs, ImportRailjsonArgs, PostgresConfig,
-    RedisConfig, RunserverArgs,
+    ClearArgs, Client, Commands, GenerateArgs, ImportRailjsonArgs, PostgresConfig, RedisConfig,
+    RunserverArgs,
 };
 use colored::*;
 use db_connection::{DBConnection, RedisPool};
@@ -28,14 +29,16 @@ use diesel::{Connection, PgConnection};
 use infra::Infra;
 use infra_cache::InfraCache;
 use rocket::{Build, Config, Rocket};
+use rocket_db_pools::deadpool_redis::{
+    redis::{cmd, FromRedisValue},
+    Config as RedisPoolConfig, Runtime,
+};
 use rocket_db_pools::Database;
 use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
 use std::process::exit;
 use std::sync::Arc;
-
-use crate::schema::RailJson;
 
 #[rocket::main]
 async fn main() {
@@ -55,7 +58,7 @@ async fn run() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     match client.command {
         Commands::Runserver(args) => runserver(args, pg_config, redis_config).await,
-        Commands::Generate(args) => generate(args, pg_config).await,
+        Commands::Generate(args) => generate(args, pg_config, redis_config).await,
         Commands::Clear(args) => clear(args, pg_config),
         Commands::ImportRailjson(args) => import_railjson(args, pg_config),
     }
@@ -121,6 +124,7 @@ async fn runserver(
 async fn generate(
     args: GenerateArgs,
     pg_config: PostgresConfig,
+    redis_config: RedisConfig,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut conn = PgConnection::establish(&pg_config.url()).expect("Error while connecting DB");
 
@@ -146,7 +150,9 @@ async fn generate(
         );
         let infra_cache = InfraCache::load(&mut conn, &infra)?;
         if infra.refresh(&mut conn, args.force, &infra_cache)? {
-            chartos::invalidate_all(infra.id).await;
+            let mut cfg = RedisPoolConfig::from_url(redis_config.redis_url);
+            let redis_pool = cfg.create_pool(Some(Runtime::Tokio1)).unwrap();
+            chartos::invalidate_all(redis_pool, infra.id).await;
             println!("✅ Infra {}[{}] generated!", infra.name.bold(), infra.id);
         } else {
             println!(

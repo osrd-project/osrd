@@ -1,12 +1,11 @@
-mod chartos_config;
 mod postgres_config;
 mod redis_config;
 
-use std::path::PathBuf;
 use clap::{Args, Parser, Subcommand};
 use derivative::Derivative;
 pub use postgres_config::PostgresConfig;
 pub use redis_config::RedisConfig;
+use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
 #[clap(author, version)]

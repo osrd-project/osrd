@@ -79,21 +79,26 @@ async fn invalidate_cache(
 /// If the zone is invalide nothing is done
 pub async fn invalidate_zone(
     redis_pool: &RedisPool,
+    layers: &Vec<String>,
     infra_id: i32,
     zone: &InvalidationZone,
 ) -> Result<(), RedisError> {
     if !zone.is_valid() {
         return Ok(());
     }
-    for layer in LAYERS {
+    for layer in layers {
         invalidate_layer_zone(redis_pool, infra_id, layer, zone).await?;
     }
     Ok(())
 }
 
 /// Invalidate all chartos layers
-pub async fn invalidate_all(redis_pool: &RedisPool,  infra_id: i32) -> Result<(), RedisError> {
-    for layer_name in LAYERS {
+pub async fn invalidate_all(
+    redis_pool: &RedisPool,
+    layers: &Vec<String>,
+    infra_id: i32,
+) -> Result<(), RedisError> {
+    for layer_name in layers {
         invalidate_layer(redis_pool, infra_id, layer_name).await?;
     }
     Ok(())
