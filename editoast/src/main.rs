@@ -29,10 +29,7 @@ use diesel::{Connection, PgConnection};
 use infra::Infra;
 use infra_cache::InfraCache;
 use rocket::{Build, Config, Rocket};
-use rocket_db_pools::deadpool_redis::{
-    redis::{cmd, FromRedisValue},
-    Config as RedisPoolConfig, Runtime,
-};
+use rocket_db_pools::deadpool_redis::{Config as RedisPoolConfig, Runtime};
 use rocket_db_pools::Database;
 use std::error::Error;
 use std::fs::File;
@@ -152,10 +149,10 @@ async fn generate(
         );
         let infra_cache = InfraCache::load(&mut conn, &infra)?;
         if infra.refresh(&mut conn, args.force, &infra_cache)? {
-            let mut cfg = RedisPoolConfig::from_url(redis_config.redis_url);
-            let redis_pool = cfg.create_pool(Some(Runtime::Tokio1)).unwrap();
+            let cfg = RedisPoolConfig::from_url(&redis_config.redis_url);
+            let pool = cfg.create_pool(Some(Runtime::Tokio1)).unwrap();
             chartos::invalidate_all(
-                redis_pool,
+                &RedisPool(pool),
                 &MapLayers::parse().layers.keys().cloned().collect(),
                 infra.id,
             )

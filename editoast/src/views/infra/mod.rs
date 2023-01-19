@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 use super::params::List;
 use crate::api_error::ApiResult;
-use crate::chartos;
+use crate::chartos::{self, MapLayers};
 use crate::db_connection::{DBConnection, RedisPool};
 use crate::infra::{Infra, InfraName};
 use crate::infra_cache::{InfraCache, ObjectCache};
@@ -67,6 +67,7 @@ async fn refresh<'a>(
     infras: List<'a, i32>,
     force: bool,
     infra_caches: &State<Arc<CHashMap<i32, InfraCache>>>,
+    map_layers: &State<MapLayers>,
     redis_pool: &RedisPool,
 ) -> ApiResult<JsonValue> {
     let infra_caches = infra_caches.inner().clone();
@@ -102,7 +103,12 @@ async fn refresh<'a>(
         .await?;
 
     for infra_id in refreshed_infra.iter() {
-        chartos::invalidate_all(redis_pool, *infra_id).await;
+        chartos::invalidate_all(
+            redis_pool,
+            &map_layers.layers.keys().cloned().collect(),
+            *infra_id,
+        )
+        .await;
     }
 
     Ok(json!({ "infra_refreshed": refreshed_infra }))

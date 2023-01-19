@@ -6,8 +6,8 @@ use rocket::serde::json::{Error as JsonError, Json};
 use rocket::State;
 
 use crate::api_error::{ApiResult, InfraLockedError};
-use crate::chartos::{self, InvalidationZone};
-use crate::db_connection::DBConnection;
+use crate::chartos::{self, InvalidationZone, MapLayers};
+use crate::db_connection::{DBConnection, RedisPool};
 use crate::generated_data;
 use crate::infra::Infra;
 use crate::infra_cache::InfraCache;
@@ -25,6 +25,7 @@ async fn edit<'a>(
     operations: Result<Json<Vec<Operation>>, JsonError<'a>>,
     infra_caches: &State<Arc<CHashMap<i32, InfraCache>>>,
     redis_pool: &RedisPool,
+    map_layers: &State<MapLayers>,
     conn: DBConnection,
 ) -> ApiResult<Json<Vec<OperationResult>>> {
     let operations = operations?;
@@ -38,7 +39,13 @@ async fn edit<'a>(
         })
         .await?;
 
-    chartos::invalidate_zone(redis_pool, infra, &invalid_zone).await;
+    chartos::invalidate_zone(
+        redis_pool,
+        &map_layers.layers.keys().cloned().collect(),
+        infra,
+        &invalid_zone,
+    )
+    .await;
 
     Ok(Json(operation_results))
 }
