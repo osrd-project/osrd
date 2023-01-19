@@ -25,7 +25,7 @@ use self::redis_utils::{delete, keys};
 /// * `layer_name` - Layer to invalidate
 /// * `view_name` - Specific view to invalidate, if not provided all layer's views are invalidated
 ///
-/// Returns the number of deleted keys.
+/// Returns the number of deleted keys
 async fn invalidate_full_layer_cache(
     redis_pool: &RedisPool,
     infra_id: i32,
