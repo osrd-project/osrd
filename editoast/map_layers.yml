@@ -2,6 +2,7 @@ layers:
   track_sections:
     table_name: osrd_infra_tracksectionlayer
     id_field: id
+    geom_type: LineString
     views:
       geo:
         on_field: geographic
@@ -21,6 +22,7 @@ layers:
   signals:
     table_name: osrd_infra_signallayer
     id_field: id
+    geom_type: Point
     views:
       geo:
         on_field: geographic
@@ -38,6 +40,7 @@ layers:
   speed_sections:
     table_name: osrd_infra_speedsectionlayer
     id_field: id
+    geom_type: MultiLineString
     views:
       geo:
         on_field: geographic
@@ -59,6 +62,7 @@ layers:
   lpv:
     table_name: osrd_infra_speedsectionlayer
     id_field: id
+    geom_type: MultiLineString
     views:
       geo:
         on_field: geographic
@@ -80,6 +84,7 @@ layers:
   track_section_links:
     table_name: osrd_infra_tracksectionlinklayer
     id_field: id
+    geom_type: Point
     views:
       geo:
         on_field: geographic
@@ -97,6 +102,7 @@ layers:
   switches:
     table_name: osrd_infra_switchlayer
     id_field: id
+    geom_type: Point
     views:
       geo:
         on_field: geographic
@@ -114,6 +120,7 @@ layers:
   detectors:
     table_name: osrd_infra_detectorlayer
     id_field: id
+    geom_type: Point
     views:
       geo:
         on_field: geographic
@@ -131,6 +138,7 @@ layers:
   buffer_stops:
     table_name: osrd_infra_bufferstoplayer
     id_field: id
+    geom_type: Point
     views:
       geo:
         on_field: geographic
@@ -144,27 +152,11 @@ layers:
         data_expr: buffer_stop.data
         joins:
           - inner join osrd_infra_bufferstopmodel buffer_stop on buffer_stop.obj_id = layer.obj_id and buffer_stop.infra_id = layer.infra_id
-
-  routes:
-    table_name: osrd_infra_routelayer
-    id_field: id
-    views:
-      geo:
-        on_field: geographic
-        cache_duration: 3600
-        data_expr: route.data
-        joins:
-          - inner join osrd_infra_routemodel route on route.obj_id = layer.obj_id and route.infra_id = layer.infra_id
-      sch:
-        on_field: schematic
-        cache_duration: 3600
-        data_expr: route.data
-        joins:
-          - inner join osrd_infra_routemodel route on route.obj_id = layer.obj_id and route.infra_id = layer.infra_id
 
   operational_points:
     table_name: osrd_infra_operationalpointlayer
     id_field: id
+    geom_type: MultiPoint
     views:
       geo:
         on_field: geographic
@@ -182,6 +174,7 @@ layers:
   catenaries:
     table_name: osrd_infra_catenarylayer
     id_field: id
+    geom_type: MultiLineString
     views:
       geo:
         on_field: geographic
@@ -199,6 +192,7 @@ layers:
   lpv_panels:
     table_name: osrd_infra_lpvpanellayer
     id_field: id
+    geom_type: Point
     views:
       geo:
         on_field: geographic
@@ -212,6 +206,7 @@ layers:
   errors:
     table_name: osrd_infra_errorlayer
     id_field: id
+    geom_type: Point
     views:
       geo:
         on_field: geographic

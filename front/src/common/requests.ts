@@ -9,8 +9,8 @@ function formatPath(path: string): string {
   if (path.startsWith('/editoast')) {
     result = `${mainConfig.proxy_editoast}${path.replace('/editoast/', '/')}`;
   }
-  if (path.startsWith('/layer')) {
-    result = `${mainConfig.proxy_chartis}${path}`;
+  if (path.startsWith('/layers')) {
+    result = `${mainConfig.proxy_editoast}${path}`;
   }
   return result;
 }

@@ -2,20 +2,20 @@ import { emptySplitApi as api } from './emptyApi';
 const injectedRtkApi = api.injectEndpoints({
   endpoints: (build) => ({
     healthHealthGet: build.query<HealthHealthGetApiResponse, HealthHealthGetApiArg>({
-      query: () => ({ url: `/health/` }),
+      query: () => ({ url: `/layers/health/` }),
     }),
     getVersion: build.query<GetVersionApiResponse, GetVersionApiArg>({
-      query: () => ({ url: `/version` }),
+      query: () => ({ url: `/layers/version` }),
     }),
     infoInfoGet: build.query<InfoInfoGetApiResponse, InfoInfoGetApiArg>({
-      query: () => ({ url: `/info/` }),
+      query: () => ({ url: `/layers/info/` }),
     }),
     mvtViewMetadataLayerLayerSlugMvtViewSlugGet: build.query<
       MvtViewMetadataLayerLayerSlugMvtViewSlugGetApiResponse,
       MvtViewMetadataLayerLayerSlugMvtViewSlugGetApiArg
     >({
       query: (queryArg) => ({
-        url: `/layer/${queryArg.layerSlug}/mvt/${queryArg.viewSlug}/`,
+        url: `/layers/layer/${queryArg.layerSlug}/mvt/${queryArg.viewSlug}/`,
         params: { infra: queryArg.infra },
       }),
     }),
@@ -24,7 +24,7 @@ const injectedRtkApi = api.injectEndpoints({
       MvtViewTileTileLayerSlugViewSlugZXYGetApiArg
     >({
       query: (queryArg) => ({
-        url: `/tile/${queryArg.layerSlug}/${queryArg.viewSlug}/${queryArg.z}/${queryArg.x}/${queryArg.y}/`,
+        url: `/layers/tile/${queryArg.layerSlug}/${queryArg.viewSlug}/${queryArg.z}/${queryArg.x}/${queryArg.y}/`,
         params: { infra: queryArg.infra },
       }),
     }),
@@ -33,7 +33,7 @@ const injectedRtkApi = api.injectEndpoints({
       InvalidateLayerLayerLayerSlugInvalidatePostApiArg
     >({
       query: (queryArg) => ({
-        url: `/layer/${queryArg.layerSlug}/invalidate/`,
+        url: `/layers/layer/${queryArg.layerSlug}/invalidate/`,
         method: 'POST',
         params: { infra: queryArg.infra },
       }),
@@ -43,7 +43,7 @@ const injectedRtkApi = api.injectEndpoints({
       InvalidateLayerBboxLayerLayerSlugInvalidateBboxPostApiArg
     >({
       query: (queryArg) => ({
-        url: `/layer/${queryArg.layerSlug}/invalidate_bbox/`,
+        url: `/layers/layer/${queryArg.layerSlug}/invalidate_bbox/`,
         method: 'POST',
         body: queryArg.body,
         params: { infra: queryArg.infra },
@@ -54,7 +54,7 @@ const injectedRtkApi = api.injectEndpoints({
       GetObjectsInBboxLayerLayerSlugObjectsViewSlugMinXMinYMaxXMaxYGetApiArg
     >({
       query: (queryArg) => ({
-        url: `/layer/${queryArg.layerSlug}/objects/${queryArg.viewSlug}/${queryArg.minX}/${queryArg.minY}/${queryArg.maxX}/${queryArg.maxY}/`,
+        url: `/layers/layer/${queryArg.layerSlug}/objects/${queryArg.viewSlug}/${queryArg.minX}/${queryArg.minY}/${queryArg.maxX}/${queryArg.maxY}/`,
         params: { infra: queryArg.infra },
       }),
     }),
@@ -72,15 +72,15 @@ export type InfoInfoGetApiResponse = /** status 200 Successful Response */ any;
 export type InfoInfoGetApiArg = void;
 export type MvtViewMetadataLayerLayerSlugMvtViewSlugGetApiResponse =
   /** status 200 Successful Response */ {
-    type?: string;
-    name?: string;
-    promotedId?: object;
-    scheme?: string;
-    tiles?: string[];
-    attribution?: string;
-    minzoom?: number;
-    maxzoom?: number;
-  };
+  type?: string;
+  name?: string;
+  promotedId?: object;
+  scheme?: string;
+  tiles?: string[];
+  attribution?: string;
+  minzoom?: number;
+  maxzoom?: number;
+};
 export type MvtViewMetadataLayerLayerSlugMvtViewSlugGetApiArg = {
   layerSlug: string;
   viewSlug: string;
@@ -111,9 +111,9 @@ export type InvalidateLayerBboxLayerLayerSlugInvalidateBboxPostApiArg = {
 };
 export type GetObjectsInBboxLayerLayerSlugObjectsViewSlugMinXMinYMaxXMaxYGetApiResponse =
   /** status 200 Successful Response */ {
-    type?: 'FeatureCollection';
-    features?: object[];
-  };
+  type?: 'FeatureCollection';
+  features?: object[];
+};
 export type GetObjectsInBboxLayerLayerSlugObjectsViewSlugMinXMinYMaxXMaxYGetApiArg = {
   layerSlug: string;
   viewSlug: string;

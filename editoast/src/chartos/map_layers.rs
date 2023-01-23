@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use mvt::GeomType;
 use serde::{Deserialize, Serialize};
 use serde_yaml::{self};
 
@@ -32,6 +33,35 @@ pub struct Layer {
     pub id_field: Option<String>,
     #[serde(default)]
     pub attribution: Option<String>,
+    geom_type: String,
+}
+
+pub enum GeoJsonType {
+    Point,
+    MultiPoint,
+    LineString,
+    MultiLineString,
+}
+
+impl Layer {
+    pub fn geom_type(&self) -> GeomType {
+        match self.geom_type.as_ref() {
+            "Point" => GeomType::Point,
+            "MultiPoint" => GeomType::Point,
+            "LineString" => GeomType::Linestring,
+            "MultiLineString" => GeomType::Linestring,
+            value => panic!("Unsupported geom_type {value}"),
+        }
+    }
+    pub fn geo_json_type(&self) -> GeoJsonType {
+        match self.geom_type.as_ref() {
+            "Point" => GeoJsonType::Point,
+            "MultiPoint" => GeoJsonType::MultiPoint,
+            "LineString" => GeoJsonType::LineString,
+            "MultiLineString" => GeoJsonType::MultiLineString,
+            value => panic!("Unsupported geom_type {value}"),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]

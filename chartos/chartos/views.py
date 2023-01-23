@@ -158,6 +158,7 @@ async def mvt_query(psql, layer, infra, view: View, z: int, x: int, y: int) -> b
         # exclude geometry collections
         f"AND ST_GeometryType({view.on_field}) != 'ST_GeometryCollection' "
     )
+    print(query_get_objects)
 
     async with psql.transaction(isolation="repeatable_read", readonly=True):
         records = await psql.fetch(query_get_objects, z, x, y, int(infra))
