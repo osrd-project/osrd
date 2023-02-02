@@ -131,6 +131,7 @@ pub async fn cache_and_get_mvt_tile<'a>(
     }
 
     let geo_json_query = get_geo_json_sql_query(&layer.table_name, view);
+    println!("{}", geo_json_query);
     let records = conn
         .run::<_, ApiResult<_>>(move |conn| {
             match sql_query(geo_json_query)

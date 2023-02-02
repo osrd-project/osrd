@@ -1,4 +1,4 @@
-use diesel::sql_types::{Jsonb, Text};
+use diesel::sql_types::{Json, Text};
 use mvt::{Feature, GeomData, GeomEncoder, MapGrid, Tile as MvtTile, TileId};
 use pointy::Transform64;
 use rocket::serde::json::Value as JsonValue;
@@ -10,7 +10,7 @@ use crate::{map::View, schema::GeoJson};
 pub struct GeoJsonAndData {
     #[diesel(sql_type = Text)]
     pub geo_json: String,
-    #[diesel(sql_type = Jsonb)]
+    #[diesel(sql_type = Json)]
     pub data: JsonValue,
 }
 
@@ -124,7 +124,7 @@ pub fn create_and_fill_mvt_tile(
         .scale(ts, ts);
     for record in records.into_iter() {
         let mut feature = mvt_layer.into_feature(record.as_geom_data(transform));
-        add_tags_to_feature(&mut feature, record.data, String::new());
+        // add_tags_to_feature(&mut feature, record.data, String::new());
         mvt_layer = feature.into_layer();
     }
     tile.add_layer(mvt_layer).unwrap();
@@ -144,7 +144,9 @@ pub fn get_geo_json_sql_query(table_name: &str, view: &View) -> String {
             SELECT TileBBox($1, $2, $3, 3857) AS geom
         )
         SELECT ST_AsGeoJson(geographic) AS geo_json, 
-            {data_expr} {exclude_fields} AS data 
+            json_build_object(
+                {fields}
+            ) AS data 
         FROM {table_name} layer 
             CROSS JOIN bbox 
             {joins} 
@@ -154,13 +156,15 @@ pub fn get_geo_json_sql_query(table_name: &str, view: &View) -> String {
             AND ST_GeometryType({on_field}) != 'ST_GeometryCollection'
         ",
         on_field = view.on_field,
-        data_expr = view.data_expr,
-        exclude_fields = &view
-            .exclude_fields
+        fields = &view
+            .fields
             .iter()
-            .map(|field| format!("- '{field}'"))
+            .map(|(name, path)| format!(
+                "'{name}', {data_expr}::jsonb {path}",
+                data_expr = view.data_expr
+            ))
             .collect::<Vec<_>>()
-            .join(" "),
+            .join(", \n"),
         joins = view.joins.join(" "),
         where_condition = &view
             .where_expr
@@ -186,7 +190,14 @@ mod tests {
             SELECT TileBBox($1, $2, $3, 3857) AS geom
         )
         SELECT ST_AsGeoJson(geographic) AS geo_json, 
-            track_section.data - 'geo' - 'sch' AS data 
+            json_build_object(
+                'length', track_section.data::jsonb -> 'length', 
+'extensions_sncf_track_name', track_section.data::jsonb -> 'extensions' -> 'sncf' -> 'track_name', 
+'curves', track_section.data::jsonb ->> 'curves', 
+'extensions_sncf_line_name', track_section.data::jsonb -> 'extensions' -> 'sncf' -> 'line_name', 
+'loading_gauge_limits', track_section.data::jsonb ->> 'loading_gauge_limits', 
+'extensions_sncf_line_code', track_section.data::jsonb -> 'extensions' -> 'sncf' -> 'line_code'
+            ) AS data 
         FROM osrd_infra_tracksectionlayer layer 
             CROSS JOIN bbox 
             inner join osrd_infra_tracksectionmodel track_section on track_section.obj_id = layer.obj_id and track_section.infra_id = layer.infra_id 

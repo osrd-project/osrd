@@ -15,12 +15,12 @@ pub struct View {
     pub on_field: String,
     pub data_expr: String,
     #[serde(default)]
-    pub exclude_fields: Vec<String>,
-    #[serde(default)]
     pub joins: Vec<JoinExpr>,
     pub cache_duration: u32,
     #[serde(rename = "where", default)]
     pub where_expr: Vec<String>,
+    #[serde(default)]
+    pub fields: HashMap<String, String>,
 }
 
 /// Layer description
