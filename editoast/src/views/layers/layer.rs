@@ -2,6 +2,7 @@ use crate::api_error::ApiResult;
 use crate::client::MapLayersConfig;
 use crate::db_connection::{DBConnection, RedisPool};
 use crate::map::{get, get_cache_tile_key, get_view_cache_prefix, set, Layer, MapLayers, Tile};
+use crate::views::layers::mvt_utils::TrackSectionResponse;
 use diesel::sql_types::Integer;
 use diesel::{sql_query, RunQueryDsl};
 use rocket::serde::json::{json, Value as JsonValue};
@@ -12,7 +13,9 @@ use thiserror::Error;
 
 use crate::api_error::ApiError;
 
-use super::mvt_utils::{create_and_fill_mvt_tile, get_geo_json_sql_query, GeoJsonAndData};
+use super::mvt_utils::{
+    create_and_fill_mvt_tile, get_geo_json_sql_query, GeoJsonAndData, MvtTileResult,
+};
 
 #[derive(Debug, Error)]
 enum LayersError {
@@ -124,35 +127,34 @@ pub async fn cache_and_get_mvt_tile<'a>(
         &get_view_cache_prefix(layer_slug, infra, view_slug),
         &Tile { x, y, z },
     );
-    let cached_value = get::<Vec<u8>>(pool, &cache_key).await;
+    // let cached_value = get::<Vec<u8>>(pool, &cache_key).await;
 
-    if let Some(value) = cached_value {
-        return Ok(value);
-    }
+    // if let Some(value) = cached_value {
+    //     return Ok(value);
+    // }
 
     let geo_json_query = get_geo_json_sql_query(&layer.table_name, view);
-    println!("{}", geo_json_query);
-    let records = conn
+    let mvt_tile = conn
         .run::<_, ApiResult<_>>(move |conn| {
             match sql_query(geo_json_query)
                 .bind::<Integer, _>(z as i32)
                 .bind::<Integer, _>(x as i32)
                 .bind::<Integer, _>(y as i32)
                 .bind::<Integer, _>(infra as i32)
-                .get_results::<GeoJsonAndData>(conn)
+                .get_results::<MvtTileResult>(conn)
             {
                 Ok(results) => Ok(results),
                 Err(err) => Err(err.into()),
             }
         })
         .await?;
-    let mvt_bytes: Vec<u8> = create_and_fill_mvt_tile(z, x, y, layer_slug, records)
-        .to_bytes()
-        .unwrap();
-    set(pool, &cache_key, mvt_bytes.clone())
-        .await
-        .unwrap_or_else(|_| panic!("Fail to set value in redis with key {cache_key}"));
-    Ok(mvt_bytes)
+    // let mvt_bytes: Vec<u8> = create_and_fill_mvt_tile(z, x, y, layer_slug, records)
+    //     .to_bytes()
+    //     .unwrap();
+    // set(pool, &cache_key, mvt_tile.get(0).unwrap().mvt_tile.clone())
+    //     .await
+    //     .unwrap_or_else(|_| panic!("Fail to set value in redis with key {cache_key}"));
+    Ok(mvt_tile.get(0).unwrap().mvt_tile.clone())
 }
 
 #[cfg(test)]

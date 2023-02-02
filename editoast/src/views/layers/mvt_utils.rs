@@ -1,4 +1,4 @@
-use diesel::sql_types::{Json, Text};
+use diesel::sql_types::{Bytea, Double, Float, Integer, Json, Text};
 use mvt::{Feature, GeomData, GeomEncoder, MapGrid, Tile as MvtTile, TileId};
 use pointy::Transform64;
 use rocket::serde::json::Value as JsonValue;
@@ -7,11 +7,84 @@ use serde::{Deserialize, Serialize};
 use crate::{map::View, schema::GeoJson};
 
 #[derive(Clone, QueryableByName, Queryable, Debug, Serialize, Deserialize)]
+pub struct MvtTileResult {
+    #[diesel(sql_type = Bytea)]
+    pub mvt_tile: Vec<u8>,
+}
+
+#[derive(Clone, QueryableByName, Queryable, Debug, Serialize, Deserialize)]
 pub struct GeoJsonAndData {
     #[diesel(sql_type = Text)]
     pub geo_json: String,
     #[diesel(sql_type = Json)]
     pub data: JsonValue,
+}
+
+#[derive(Clone, QueryableByName, Queryable, Debug, Serialize, Deserialize)]
+pub struct TrackSectionResponse {
+    #[diesel(sql_type = Text)]
+    pub geo_json: String,
+    #[diesel(sql_type = Text)]
+    pub id: String,
+    #[diesel(sql_type = Text)]
+    pub curves: String,
+    #[diesel(sql_type = Float)]
+    pub length: f32,
+    #[diesel(sql_type = Integer)]
+    pub extensions_sncf_line_code: i32,
+    #[diesel(sql_type = Text)]
+    pub extensions_sncf_line_name: String,
+    #[diesel(sql_type = Text)]
+    pub extensions_sncf_track_name: String,
+    #[diesel(sql_type = Text)]
+    pub loading_gauge_limits: String,
+}
+
+impl TrackSectionResponse {
+    pub fn add_tags_to_feature(&self, feature: &mut Feature) {
+        feature.add_tag_string("id", &self.id);
+        feature.add_tag_string("curves", &self.curves);
+        feature.add_tag_float("length", self.length);
+        feature.add_tag_int(
+            "extensions_sncf_line_code",
+            self.extensions_sncf_line_code as i64,
+        );
+        feature.add_tag_string("extensions_sncf_line_name", &self.extensions_sncf_line_name);
+        feature.add_tag_string(
+            "extensions_sncf_track_name",
+            &self.extensions_sncf_track_name,
+        );
+        feature.add_tag_string("loading_gauge_limits", &self.loading_gauge_limits);
+    }
+    /// Converts GeoJsonAndData as mvt GeomData
+    pub fn as_geom_data(&self, transform: Transform64) -> GeomData {
+        let geo_json = serde_json::from_str::<GeoJson>(&self.geo_json).unwrap();
+        let mut encoder = GeomEncoder::new(geo_json.get_geom_type(), transform);
+        match geo_json {
+            GeoJson::Point { coordinates } => {
+                encoder.add_point(coordinates.0, coordinates.1);
+            }
+            GeoJson::MultiPoint { coordinates } => {
+                for (x, y) in coordinates {
+                    encoder.add_point(x, y);
+                }
+            }
+            GeoJson::LineString { coordinates } => {
+                for (x, y) in coordinates {
+                    encoder.add_point(x, y);
+                }
+            }
+            GeoJson::MultiLineString { coordinates } => {
+                for line in coordinates {
+                    for (x, y) in line.iter() {
+                        encoder.add_point(*x, *y);
+                    }
+                    encoder.complete_geom().unwrap();
+                }
+            }
+        };
+        encoder.complete().unwrap().encode().unwrap()
+    }
 }
 
 impl GeoJsonAndData {
@@ -103,7 +176,7 @@ pub fn create_and_fill_mvt_tile(
     x: u64,
     y: u64,
     layer_name: &str,
-    records: Vec<GeoJsonAndData>,
+    records: Vec<TrackSectionResponse>,
 ) -> MvtTile {
     let mut tile = MvtTile::new(4096);
     // Return if no records as a tile without layers can be created but is not really useful
@@ -124,6 +197,7 @@ pub fn create_and_fill_mvt_tile(
         .scale(ts, ts);
     for record in records.into_iter() {
         let mut feature = mvt_layer.into_feature(record.as_geom_data(transform));
+        record.add_tags_to_feature(&mut feature);
         // add_tags_to_feature(&mut feature, record.data, String::new());
         mvt_layer = feature.into_layer();
     }
@@ -140,38 +214,45 @@ pub fn create_and_fill_mvt_tile(
 pub fn get_geo_json_sql_query(table_name: &str, view: &View) -> String {
     format!(
         "
-        WITH bbox AS (
-            SELECT TileBBox($1, $2, $3, 3857) AS geom
+        with mvtgeom as (
+            WITH bbox AS (
+                SELECT TileBBox($1, $2, $3, 3857) AS geom
+            )
+            SELECT ST_AsMVTGeom(geographic, bbox.geom, 4096, 64) AS geom,
+                track_section.length, 
+                track_section.extensions_sncf_track_name, 
+                track_section.curves, 
+                track_section.extensions_sncf_line_name, 
+                track_section.loading_gauge_limits, 
+                track_section.extensions_sncf_line_code
+            FROM osrd_infra_tracksectionlayer layer 
+                CROSS JOIN bbox
+                inner join osrd_infra_track_sections_data track_section on track_section.id = layer.obj_id and track_section.infra_id = layer.infra_id 
+            WHERE layer.infra_id = $4
+                AND geographic && bbox.geom 
+                AND ST_GeometryType(schematic) != 'ST_GeometryCollection'
         )
-        SELECT ST_AsGeoJson(geographic) AS geo_json, 
-            json_build_object(
-                {fields}
-            ) AS data 
-        FROM {table_name} layer 
-            CROSS JOIN bbox 
-            {joins} 
-        WHERE layer.infra_id = $4
-            {where_condition}
-            AND {on_field} && bbox.geom 
-            AND ST_GeometryType({on_field}) != 'ST_GeometryCollection'
-        ",
-        on_field = view.on_field,
-        fields = &view
-            .fields
-            .iter()
-            .map(|(name, path)| format!(
-                "'{name}', {data_expr}::jsonb {path}",
-                data_expr = view.data_expr
-            ))
-            .collect::<Vec<_>>()
-            .join(", \n"),
-        joins = view.joins.join(" "),
-        where_condition = &view
-            .where_expr
-            .iter()
-            .map(|field| format!("AND ({field})"))
-            .collect::<Vec<_>>()
-            .join(" "),
+        SELECT ST_AsMVT(mvtgeom.*, 'track_sections') as mvt_tile
+        FROM mvtgeom
+        "
+        // ,
+        // on_field = view.on_field,
+        // fields = &view
+        //     .fields
+        //     .iter()
+        //     .map(|(name, path)| format!(
+        //         "{data_expr}::jsonb {path} as {name}",
+        //         data_expr = view.data_expr
+        //     ))
+        //     .collect::<Vec<_>>()
+        //     .join(", \n"),
+        // joins = view.joins.join(" "),
+        // where_condition = &view
+        //     .where_expr
+        //     .iter()
+        //     .map(|field| format!("AND ({field})"))
+        //     .collect::<Vec<_>>()
+        //     .join(" "),
     )
 }
 
