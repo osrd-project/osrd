@@ -4,7 +4,7 @@ from typing import Dict, List
 from django.db import connection, transaction
 
 from osrd_infra.models import Infra
-from osrd_infra.schemas.infra import BaseObjectTrait, RailJsonInfra
+from osrd_schemas.infra import BaseObjectTrait, RailJsonInfra
 
 CURRENT_DIR = Path(__file__).parent
 GET_INFRA_NO_EXT_SQL = open(CURRENT_DIR / "sql/get_infra_no_ext.sql").read()

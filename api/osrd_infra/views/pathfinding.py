@@ -14,8 +14,8 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from osrd_infra.models import OperationalPointModel, PathModel, TrackSectionModel
-from osrd_infra.schemas.infra import Direction, TrackSection
-from osrd_infra.schemas.path import PathPayload
+from osrd_schemas.infra import Direction, TrackSection
+from osrd_schemas.path import PathPayload
 from osrd_infra.serializers import (
     PathInputSerializer,
     PathOPInputSerializer,

@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from osrd_infra.models import Project, Scenario, Study, Timetable
-from osrd_infra.schemas.study import StudyState, StudyType
+from osrd_schemas.study import StudyState, StudyType
 from osrd_infra.serializers import (
     ProjectSerializer,
     ScenarioSerializer,

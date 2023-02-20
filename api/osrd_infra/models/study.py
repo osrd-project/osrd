@@ -4,7 +4,7 @@ from django.contrib.postgres.fields import ArrayField
 from osrd_infra.models.electrical_profiles import ElectricalProfileSet
 from osrd_infra.models.infra import Infra
 from osrd_infra.models.timetable import Timetable
-from osrd_infra.schemas.study import StudyState, StudyType
+from osrd_schemas.study import StudyState, StudyType
 
 
 class Project(models.Model):

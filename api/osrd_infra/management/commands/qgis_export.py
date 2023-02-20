@@ -16,7 +16,7 @@ from osrd_infra.models import (
     TrackSectionLinkModel,
     TrackSectionModel,
 )
-from osrd_infra.schemas.infra import Endpoint, TrackLocationTrait, TrackSection
+from osrd_schemas.infra import Endpoint, TrackLocationTrait, TrackSection
 
 
 @dataclass

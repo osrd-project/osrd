@@ -3,7 +3,7 @@ from typing import List, Optional
 from geojson_pydantic import Point
 from pydantic import BaseModel, Field
 
-from osrd_infra.schemas.infra import (
+from .infra import (
     DirectionalTrackRange,
     Identifier,
     TrackLocationTrait,

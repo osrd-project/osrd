@@ -5,6 +5,8 @@ from osrd_infra.schemas.external_generated_inputs import (
 )
 from osrd_infra.utils import PydanticValidator
 
+from osrd_schemas.external_generated_inputs import ElectricalProfileSet as ElectricalProfileSetSchema
+
 
 class ElectricalProfileSetManager(models.Manager):
     use_for_related_fields = True

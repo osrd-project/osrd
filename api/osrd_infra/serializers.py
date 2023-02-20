@@ -23,7 +23,7 @@ from osrd_infra.models import (
     TrainScheduleModel,
 )
 from osrd_infra.models.electrical_profiles import ElectricalProfileSet
-from osrd_infra.schemas.rolling_stock import ComfortType
+from osrd_schemas.rolling_stock import ComfortType
 
 
 # monkey patch rest_framework_gis so that it properly converts
