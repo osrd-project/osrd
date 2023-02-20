@@ -1,7 +1,6 @@
 import json
 
 from django.core.management.base import BaseCommand, CommandError
-
 from osrd_schemas.infra import RailJsonInfra
 from osrd_schemas.rolling_stock import RollingStock
 

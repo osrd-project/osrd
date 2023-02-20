@@ -3,13 +3,13 @@
 import django.contrib.gis.db.models.fields
 import django.contrib.postgres.fields
 import django.db.models.deletion
-from django.db import migrations, models
-
 import osrd_schemas.generated
 import osrd_schemas.infra
 import osrd_schemas.path
 import osrd_schemas.rolling_stock
 import osrd_schemas.train_schedule
+from django.db import migrations, models
+
 import osrd_infra.utils
 from osrd_infra.migrations import run_sql_add_foreign_key_infra
 

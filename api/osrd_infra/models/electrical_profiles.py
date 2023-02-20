@@ -1,11 +1,9 @@
 from django.contrib.gis.db import models
-
-from osrd_infra.schemas.external_generated_inputs import (
+from osrd_schemas.external_generated_inputs import (
     ElectricalProfileSet as ElectricalProfileSetSchema,
 )
-from osrd_infra.utils import PydanticValidator
 
-from osrd_schemas.external_generated_inputs import ElectricalProfileSet as ElectricalProfileSetSchema
+from osrd_infra.utils import PydanticValidator
 
 
 class ElectricalProfileSetManager(models.Manager):

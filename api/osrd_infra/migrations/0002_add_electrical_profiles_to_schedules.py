@@ -4,6 +4,8 @@ import django.db.models.deletion
 from django.db import migrations, models
 import django.db.models.deletion
 import osrd_schemas.train_schedule
+from django.db import migrations, models
+
 import osrd_infra.utils
 from osrd_infra.migrations import run_sql_add_foreign_key
 

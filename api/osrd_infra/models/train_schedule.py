@@ -1,4 +1,11 @@
 from django.contrib.gis.db import models
+from osrd_schemas.rolling_stock import ComfortType
+from osrd_schemas.train_schedule import (
+    MRSP,
+    Allowances,
+    TrainScheduleLabels,
+    TrainScheduleOptions,
+)
 
 from osrd_infra.models import PathModel, RollingStock, Timetable
 from osrd_schemas.rolling_stock import ComfortType

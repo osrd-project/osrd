@@ -3,7 +3,6 @@ from typing import Dict
 from django.contrib.postgres.fields import ArrayField
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
-
 from osrd_schemas.infra import LoadingGaugeType
 from osrd_schemas.rolling_stock import (
     RAILJSON_ROLLING_STOCK_VERSION,
@@ -12,6 +11,7 @@ from osrd_schemas.rolling_stock import (
     RollingResistance,
 )
 from osrd_schemas.rolling_stock import RollingStock as RollingStockSchema
+
 from osrd_infra.utils import PydanticValidator
 
 
