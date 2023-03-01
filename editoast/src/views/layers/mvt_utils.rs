@@ -1,4 +1,4 @@
-use diesel::sql_types::{Jsonb, Text};
+use diesel::sql_types::{Bytea, Jsonb, Text};
 use mvt::{Feature, GeomData, GeomEncoder, MapGrid, Tile as MvtTile, TileId};
 use pointy::Transform64;
 use serde::{Deserialize, Serialize};
@@ -12,6 +12,18 @@ pub struct GeoJsonAndData {
     pub geo_json: String,
     #[diesel(sql_type = Jsonb)]
     pub data: JsonValue,
+}
+
+#[derive(Clone, QueryableByName, Queryable, Debug, Serialize, Deserialize)]
+pub struct Keys {
+    #[diesel(sql_type = Text)]
+    pub keys: String,
+}
+
+#[derive(Clone, QueryableByName, Queryable, Debug, Serialize, Deserialize)]
+pub struct MvtResult {
+    #[diesel(sql_type = Bytea)]
+    pub mvt_tile: Vec<u8>,
 }
 
 impl GeoJsonAndData {
@@ -144,7 +156,7 @@ pub fn get_geo_json_sql_query(table_name: &str, view: &View) -> String {
             SELECT TileBBox($1, $2, $3, 3857) AS geom
         )
         SELECT ST_AsGeoJson(geographic) AS geo_json, 
-            {data_expr} {exclude_fields} AS data 
+            {data_expr} AS data 
         FROM {table_name} layer 
             CROSS JOIN bbox 
             {joins} 
@@ -155,10 +167,93 @@ pub fn get_geo_json_sql_query(table_name: &str, view: &View) -> String {
         ",
         on_field = view.on_field,
         data_expr = view.data_expr,
-        exclude_fields = &view
-            .exclude_fields
+        // exclude_fields = &view
+        //     .exclude_fields
+        //     .iter()
+        //     .map(|field| format!("- '{field}'"))
+        //     .collect::<Vec<_>>()
+        //     .join(" "),
+        joins = view.joins.join(" "),
+        where_condition = &view
+            .where_expr
             .iter()
-            .map(|field| format!("- '{field}'"))
+            .map(|field| format!("AND ({field})"))
+            .collect::<Vec<_>>()
+            .join(" "),
+    )
+}
+
+pub fn get_keys(table_name: &str, view: &View) -> String {
+    format!(
+        "
+        WITH bbox AS (
+            SELECT TileBBox($1, $2, $3, 3857) AS geom
+        )
+        SELECT distinct jsonb_object_keys({field}) as keys
+        FROM {table_name} layer 
+            CROSS JOIN bbox 
+            {joins} 
+        WHERE layer.infra_id = $4
+            {where_condition}
+            AND {on_field} && bbox.geom 
+            AND ST_GeometryType({on_field}) != 'ST_GeometryCollection'
+        ",
+        on_field = view.on_field,
+        field = format!(
+            "{data_expr} -> '{field}'",
+            data_expr = view.data_expr,
+            field = view.field_to_flatten
+        ),
+        joins = view.joins.join(" "),
+        where_condition = &view
+            .where_expr
+            .iter()
+            .map(|field| format!("AND ({field})"))
+            .collect::<Vec<_>>()
+            .join(" "),
+    )
+}
+
+pub fn get_mvt_tile_query(
+    table_name: &str,
+    view: &View,
+    tile_name: &str,
+    keys: Vec<String>,
+) -> String {
+    format!(
+        "
+        with mvtgeom as (
+            WITH bbox AS (
+                SELECT TileBBox($1, $2, $3, 3857) AS geom
+            )
+            SELECT ST_AsMVTGeom(geographic, bbox.geom, 4096, 64) AS geom, 
+                {fields}
+                {flattened_fields}
+            FROM {table_name} layer 
+                CROSS JOIN bbox 
+                {joins} 
+            WHERE layer.infra_id = $4
+                {where_condition}
+                AND {on_field} && bbox.geom 
+                AND ST_GeometryType({on_field}) != 'ST_GeometryCollection'
+        )
+        SELECT ST_AsMVT(mvtgeom.*, '{tile_name}') as mvt_tile
+        FROM mvtgeom
+        ",
+        on_field = view.on_field,
+        fields = &view
+            .fields
+            .iter()
+            .map(|(name, path)| format!("{data_expr} {path} as {name}", data_expr = view.data_expr))
+            .collect::<Vec<_>>()
+            .join(", "),
+        flattened_fields = keys
+            .iter()
+            .map(|key| format!(
+                ", {data_expr} -> '{field}' -> '{key}' as \"{field}_{key}\"",
+                data_expr = view.data_expr,
+                field = view.field_to_flatten
+            ))
             .collect::<Vec<_>>()
             .join(" "),
         joins = view.joins.join(" "),

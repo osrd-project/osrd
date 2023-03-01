@@ -7,14 +7,14 @@ layers:
         on_field: geographic
         cache_duration: 3600
         data_expr: track_section.data
-        exclude_fields: [geo, sch]
-        joins:
-          - inner join osrd_infra_tracksectionmodel track_section on track_section.obj_id = layer.obj_id and track_section.infra_id = layer.infra_id
-      sch:
-        on_field: schematic
-        cache_duration: 3600
-        data_expr: track_section.data
-        exclude_fields: [geo, sch]
+        fields:
+          id: -> 'id'
+          curves: ->> 'curves'
+          length: -> 'length'
+          extensions_sncf_line_code: -> 'extensions' -> 'sncf' -> 'line_code'
+          extensions_sncf_line_name: -> 'extensions' -> 'sncf' -> 'line_name'
+          extensions_sncf_track_name: -> 'extensions' -> 'sncf' -> 'track_name'
+          loading_gauge_limits: ->> 'loading_gauge_limits'
         joins:
           - inner join osrd_infra_tracksectionmodel track_section on track_section.obj_id = layer.obj_id and track_section.infra_id = layer.infra_id
 
@@ -26,12 +26,27 @@ layers:
         on_field: geographic
         cache_duration: 3600
         data_expr: signal.data
-        joins:
-          - inner join osrd_infra_signalmodel signal on signal.obj_id = layer.obj_id and signal.infra_id = layer.infra_id
-      sch:
-        on_field: schematic
-        cache_duration: 3600
-        data_expr: signal.data
+        fields:
+          id: -> 'id'
+          track: -> 'track'
+          position: -> 'position'
+          direction: -> 'direction'
+          sight_distance: -> 'sight_distance'
+          linked_detector: -> 'linked_detector'
+          logical_signals: ->> 'logical_signals'
+          extensions_sncf_angle_geo: -> 'extensions' -> 'sncf' -> 'angle_geo'
+          extensions_sncf_angle_sch: -> 'extensions' -> 'sncf' -> 'angle_sch'
+          extensions_sncf_comment: -> 'extensions' -> 'sncf' ->> 'comment'
+          extensions_sncf_default_aspect: -> 'extensions' -> 'sncf' -> 'default_aspect'
+          extensions_sncf_installation_type: -> 'extensions' -> 'sncf' -> 'installation_type'
+          extensions_sncf_is_in_service: -> 'extensions' -> 'sncf' -> 'is_in_service'
+          extensions_sncf_is_lightable: -> 'extensions' -> 'sncf' -> 'is_lightable'
+          extensions_sncf_is_operational: -> 'extensions' -> 'sncf' -> 'is_operational'
+          extensions_sncf_label: -> 'extensions' -> 'sncf' -> 'label'
+          extensions_sncf_side: -> 'extensions' -> 'sncf' -> 'side'
+          extensions_sncf_support_type: -> 'extensions' -> 'sncf' -> 'support_type'
+          extensions_sncf_type_code: -> 'extensions' -> 'sncf' -> 'type_code'
+          extensions_sncf_value: -> 'extensions' -> 'sncf' -> 'value'
         joins:
           - inner join osrd_infra_signalmodel signal on signal.obj_id = layer.obj_id and signal.infra_id = layer.infra_id
 
@@ -47,14 +62,11 @@ layers:
           - inner join osrd_infra_speedsectionmodel speed_section on speed_section.obj_id = layer.obj_id and speed_section.infra_id = layer.infra_id
         where:
           - not (speed_section.data @? '$.extensions.lpv_sncf.z')
-      sch:
-        on_field: schematic
-        cache_duration: 3600
-        data_expr: speed_section.data
-        joins:
-          - inner join osrd_infra_speedsectionmodel speed_section on speed_section.obj_id = layer.obj_id and speed_section.infra_id = layer.infra_id
-        where:
-          - not (speed_section.data @? '$.extensions.lpv_sncf.z')
+        fields:
+          id: -> 'id'
+          speed_limit: -> 'speed_limit'
+          track_ranges: ->> 'track_ranges'
+        field_to_flatten: speed_limit_by_tag
 
   lpv:
     table_name: osrd_infra_speedsectionlayer
@@ -68,14 +80,11 @@ layers:
           - inner join osrd_infra_speedsectionmodel speed_section on speed_section.obj_id = layer.obj_id and speed_section.infra_id = layer.infra_id
         where:
           - speed_section.data @? '$.extensions.lpv_sncf.z'
-      sch:
-        on_field: schematic
-        cache_duration: 3600
-        data_expr: speed_section.data
-        joins:
-          - inner join osrd_infra_speedsectionmodel speed_section on speed_section.obj_id = layer.obj_id and speed_section.infra_id = layer.infra_id
-        where:
-          - speed_section.data @? '$.extensions.lpv_sncf.z'
+        fields:
+          id: -> 'id'
+          speed_limit: -> 'speed_limit'
+          track_ranges: ->> 'track_ranges'
+        field_to_flatten: speed_limit_by_tag
 
   track_section_links:
     table_name: osrd_infra_tracksectionlinklayer
@@ -87,12 +96,12 @@ layers:
         data_expr: track_section_link.data
         joins:
           - inner join osrd_infra_tracksectionlinkmodel track_section_link on track_section_link.obj_id = layer.obj_id and track_section_link.infra_id = layer.infra_id
-      sch:
-        on_field: schematic
-        cache_duration: 3600
-        data_expr: track_section_link.data
-        joins:
-          - inner join osrd_infra_tracksectionlinkmodel track_section_link on track_section_link.obj_id = layer.obj_id and track_section_link.infra_id = layer.infra_id
+        fields:
+          id: -> 'id'
+          src_endpoint: -> 'src' -> 'endpoint'
+          src_track: -> 'src' -> 'track'
+          dst_endpoint: -> 'src' -> 'endpoint'
+          dst_track: -> 'src' -> 'track'
 
   switches:
     table_name: osrd_infra_switchlayer
@@ -104,12 +113,12 @@ layers:
         data_expr: switch.data
         joins:
           - inner join osrd_infra_switchmodel switch on switch.obj_id = layer.obj_id and switch.infra_id = layer.infra_id
-      sch:
-        on_field: schematic
-        cache_duration: 3600
-        data_expr: switch.data
-        joins:
-          - inner join osrd_infra_switchmodel switch on switch.obj_id = layer.obj_id and switch.infra_id = layer.infra_id
+        fields:
+          id: -> 'id'
+          switch_type: -> 'switch_type'
+          group_change_delay: -> 'group_change_delay'
+          ports: -> 'ports'
+          extensions_sncf_label: -> 'extensions' -> 'sncf' -> 'label'
 
   detectors:
     table_name: osrd_infra_detectorlayer
@@ -121,12 +130,11 @@ layers:
         data_expr: detector.data
         joins:
           - inner join osrd_infra_detectormodel detector on detector.obj_id = layer.obj_id and detector.infra_id = layer.infra_id
-      sch:
-        on_field: schematic
-        cache_duration: 3600
-        data_expr: detector.data
-        joins:
-          - inner join osrd_infra_detectormodel detector on detector.obj_id = layer.obj_id and detector.infra_id = layer.infra_id
+        fields:
+          id: -> 'id'
+          track: -> 'track'
+          position: -> 'position'
+          applicable_directions: -> 'applicable_directions'
 
   buffer_stops:
     table_name: osrd_infra_bufferstoplayer
@@ -138,13 +146,12 @@ layers:
         data_expr: buffer_stop.data
         joins:
           - inner join osrd_infra_bufferstopmodel buffer_stop on buffer_stop.obj_id = layer.obj_id and buffer_stop.infra_id = layer.infra_id
-      sch:
-        on_field: schematic
-        cache_duration: 3600
-        data_expr: buffer_stop.data
-        joins:
-          - inner join osrd_infra_bufferstopmodel buffer_stop on buffer_stop.obj_id = layer.obj_id and buffer_stop.infra_id = layer.infra_id
-
+        fields:
+          id: -> 'id'
+          track: -> 'track'
+          position: -> 'position'
+          applicable_directions: -> 'applicable_directions'
+  
   operational_points:
     table_name: osrd_infra_operationalpointlayer
     id_field: id
@@ -155,12 +162,16 @@ layers:
         data_expr: operational_point.data
         joins:
           - inner join osrd_infra_operationalpointmodel operational_point on operational_point.obj_id = layer.obj_id and operational_point.infra_id = layer.infra_id
-      sch:
-        on_field: schematic
-        cache_duration: 3600
-        data_expr: operational_point.data
-        joins:
-          - inner join osrd_infra_operationalpointmodel operational_point on operational_point.obj_id = layer.obj_id and operational_point.infra_id = layer.infra_id
+        fields:
+          id: -> 'id'
+          parts: -> 'parts'
+          extensions_sncf_ci: -> 'extensions' -> 'sncf' -> 'ci'
+          extensions_sncf_ch: -> 'extensions' -> 'sncf' -> 'ch'
+          extensions_sncf_ch_short_label: -> 'extensions' -> 'sncf' -> 'ch_short_label'
+          extensions_sncf_ch_long_label: -> 'extensions' -> 'sncf' -> 'ch_long_label'
+          extensions_sncf_trigram: -> 'extensions' -> 'sncf' -> 'trigram'
+          extensions_identifier_name: -> 'extensions' -> 'identifier' -> 'name'
+          extensions_identifier_uic: -> 'extensions' -> 'identifier' -> 'uic'
 
   catenaries:
     table_name: osrd_infra_catenarylayer
@@ -172,12 +183,10 @@ layers:
         data_expr: catenary.data
         joins:
           - inner join osrd_infra_catenarymodel catenary on catenary.obj_id = layer.obj_id and catenary.infra_id = layer.infra_id
-      sch:
-        on_field: schematic
-        cache_duration: 3600
-        data_expr: catenary.data
-        joins:
-          - inner join osrd_infra_catenarymodel catenary on catenary.obj_id = layer.obj_id and catenary.infra_id = layer.infra_id
+        fields:
+          id: -> 'id'
+          voltage: -> 'voltage'
+          track_ranges: ->> 'track_ranges'
 
   lpv_panels:
     table_name: osrd_infra_lpvpanellayer
@@ -187,10 +196,14 @@ layers:
         on_field: geographic
         cache_duration: 3600
         data_expr: layer.data
-      sch:
-        on_field: schematic
-        cache_duration: 3600
-        data_expr: layer.data
+        fields:
+          side: -> 'side'
+          type: -> 'type'
+          track: -> 'track'
+          value: -> 'value'
+          position: -> 'position'
+          angle_geo: -> 'angle_geo'
+          angle_sch: -> 'angle_sch'
 
   errors:
     table_name: osrd_infra_errorlayer
@@ -200,7 +213,12 @@ layers:
         on_field: geographic
         cache_duration: 3600
         data_expr: layer.information
-      sch:
-        on_field: schematic
-        cache_duration: 3600
-        data_expr: layer.information
+        fields:
+          field: -> 'field'
+          obj_id: -> 'obj_id'
+          obj_type: -> 'obj_type'
+          reference_type: -> 'reference' -> 'type'
+          reference_obj_id: -> 'reference' -> 'obj_id'
+          error_type: -> 'error_type'
+          is_warning: -> 'is_warning'
+

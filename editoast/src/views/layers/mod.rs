@@ -3,11 +3,12 @@ mod mvt_utils;
 use crate::client::MapLayersConfig;
 use crate::error::Result;
 use crate::map::{get, get_cache_tile_key, get_view_cache_prefix, set, Layer, MapLayers, Tile};
+use crate::views::layers::mvt_utils::{get_keys, get_mvt_tile_query, Keys, MvtResult};
 use crate::DbPool;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{block, scope, Data, Json, Path, Query};
 use actix_web::{get, HttpResponse};
-use diesel::sql_types::Integer;
+use diesel::sql_types::{Bytea, Integer, Text};
 use diesel::{sql_query, RunQueryDsl};
 use editoast_derive::EditoastError;
 use mvt_utils::{create_and_fill_mvt_tile, get_geo_json_sql_query, GeoJsonAndData};
@@ -123,21 +124,48 @@ async fn cache_and_get_mvt_tile(
     let mut redis_conn = redis_client.get_tokio_connection_manager().await.unwrap();
     let cached_value = get::<Vec<u8>>(&mut redis_conn, &cache_key).await;
 
-    if let Some(value) = cached_value {
-        return Ok(HttpResponse::Ok()
-            .content_type("application/x-protobuf")
-            .body(value));
+    // if let Some(value) = cached_value {
+    //     return Ok(HttpResponse::Ok()
+    //         .content_type("application/x-protobuf")
+    //         .body(value));
+    // }
+    let mut fields_to_flatten: Vec<String> = vec![];
+    if !view.field_to_flatten.is_empty() {
+        let keys_query = get_keys(&layer.table_name, view);
+        // println!("{}", keys_query);
+        let db_pool_1 = db_pool.clone();
+        let keys = block::<_, Result<_>>(move || {
+            let mut conn = db_pool_1.get().expect("Fail to get DB connection");
+            match sql_query(keys_query)
+                .bind::<Integer, _>(z as i32)
+                .bind::<Integer, _>(x as i32)
+                .bind::<Integer, _>(y as i32)
+                .bind::<Integer, _>(infra as i32)
+                .get_results::<Keys>(&mut conn)
+            {
+                Ok(results) => Ok(results),
+                Err(err) => Err(err.into()),
+            }
+        })
+        .await
+        .unwrap()?;
+        fields_to_flatten = keys
+            .iter()
+            .map(|keys| keys.keys.clone())
+            .collect::<Vec<String>>();
+        // println!("{:?}", fields_to_flatten);
     }
 
-    let geo_json_query = get_geo_json_sql_query(&layer.table_name, view);
-    let records = block::<_, Result<_>>(move || {
+    let mvt_query = get_mvt_tile_query(&layer.table_name, view, &layer_slug, fields_to_flatten);
+    // println!("{}", mvt_query);
+    let mvt_tile = block::<_, Result<_>>(move || {
         let mut conn = db_pool.get().expect("Fail to get DB connection");
-        match sql_query(geo_json_query)
+        match sql_query(mvt_query)
             .bind::<Integer, _>(z as i32)
             .bind::<Integer, _>(x as i32)
             .bind::<Integer, _>(y as i32)
             .bind::<Integer, _>(infra as i32)
-            .get_results::<GeoJsonAndData>(&mut conn)
+            .get_result::<MvtResult>(&mut conn)
         {
             Ok(results) => Ok(results),
             Err(err) => Err(err.into()),
@@ -146,20 +174,23 @@ async fn cache_and_get_mvt_tile(
     .await
     .unwrap()?;
 
-    let mvt_bytes: Vec<u8> = create_and_fill_mvt_tile(z, x, y, layer_slug, records)
-        .to_bytes()
-        .unwrap();
-    set(
-        &mut redis_conn,
-        &cache_key,
-        mvt_bytes.clone(),
-        view.cache_duration,
-    )
-    .await
-    .unwrap_or_else(|_| panic!("Fail to set value in redis with key {cache_key}"));
+    // let mvt_bytes: Vec<u8> = create_and_fill_mvt_tile(z, x, y, layer_slug, records)
+    //     .to_bytes()
+    //     .unwrap();
+    // set(
+    //     &mut redis_conn,
+    //     &cache_key,
+    //     mvt_bytes.clone(),
+    //     view.cache_duration,
+    // )
+    // .await
+    // .unwrap_or_else(|_| panic!("Fail to set value in redis with key {cache_key}"));
+    // Ok(HttpResponse::Ok()
+    //     .content_type("application/x-protobuf")
+    //     .body(mvt_bytes))
     Ok(HttpResponse::Ok()
         .content_type("application/x-protobuf")
-        .body(mvt_bytes))
+        .body(mvt_tile.mvt_tile))
 }
 
 #[cfg(test)]
