@@ -66,6 +66,15 @@ layers:
           id: -> 'id'
           speed_limit: -> 'speed_limit'
           track_ranges: ->> 'track_ranges'
+          extensions_lpv_sncf_r: -> 'extensions' -> 'lpv_sncf' ->> 'r'
+          extensions_lpv_sncf_z_side: -> 'extensions' -> 'lpv_sncf' -> 'z' -> 'side'
+          extensions_lpv_sncf_z_type: -> 'extensions' -> 'lpv_sncf' -> 'z' -> 'type'
+          extensions_lpv_sncf_z_track: -> 'extensions' -> 'lpv_sncf' -> 'z' -> 'track'
+          extensions_lpv_sncf_z_value: -> 'extensions' -> 'lpv_sncf' -> 'z' -> 'value'
+          extensions_lpv_sncf_z_position: -> 'extensions' -> 'lpv_sncf' -> 'z' -> 'position'
+          extensions_lpv_sncf_z_angle_geo: -> 'extensions' -> 'lpv_sncf' -> 'z' -> 'angle_geo'
+          extensions_lpv_sncf_z_angle_sch: -> 'extensions' -> 'lpv_sncf' -> 'z' -> 'angle_sch'
+          extensions_announcement: -> 'extensions' ->> 'announcement'
         field_to_flatten: speed_limit_by_tag
 
   lpv:
