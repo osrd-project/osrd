@@ -5,21 +5,21 @@ use serde::{Deserialize, Serialize};
 /// GeoJson representation
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(tag = "type")]
-pub enum GeoJson {
-    Point { coordinates: (f64, f64) },
-    MultiPoint { coordinates: Vec<(f64, f64)> },
-    LineString { coordinates: Vec<(f64, f64)> },
-    MultiLineString { coordinates: Vec<Vec<(f64, f64)>> },
+pub enum GeoJsonType {
+    Point,
+    MultiPoint,
+    LineString,
+    MultiLineString,
 }
 
-impl GeoJson {
+impl GeoJsonType {
     /// Gets MVT geom type corresponding to the GeoJson type
     pub fn get_geom_type(&self) -> GeomType {
         match self {
-            GeoJson::Point { .. } => GeomType::Point,
-            GeoJson::MultiPoint { .. } => GeomType::Point,
-            GeoJson::LineString { .. } => GeomType::Linestring,
-            GeoJson::MultiLineString { .. } => GeomType::Linestring,
+            GeoJsonType::Point => GeomType::Point,
+            GeoJsonType::MultiPoint => GeomType::Point,
+            GeoJsonType::LineString => GeomType::Linestring,
+            GeoJsonType::MultiLineString => GeomType::Linestring,
         }
     }
 }

@@ -21,7 +21,7 @@ use derivative::Derivative;
 pub use detector::{Detector, DetectorCache};
 use enum_map::Enum;
 pub use errors::{InfraError, InfraErrorType};
-pub use geo_json::GeoJson;
+pub use geo_json::GeoJsonType;
 pub use operational_point::{OperationalPoint, OperationalPointCache, OperationalPointPart};
 pub use railjson::{find_objects, RailJson, RailjsonError};
 pub use route::Route;
