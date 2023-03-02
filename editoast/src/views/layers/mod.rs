@@ -173,6 +173,10 @@ async fn cache_and_get_mvt_tile(
     })
     .await
     .unwrap()?;
+    // let mut final_tile: Vec<u8> = vec![];
+    // mvt_tiles
+    //     .iter()
+    //     .for_each(|mvt_tile| final_tile.extend(mvt_tile.mvt_tile.clone()));
 
     // let mvt_bytes: Vec<u8> = create_and_fill_mvt_tile(z, x, y, layer_slug, records)
     //     .to_bytes()

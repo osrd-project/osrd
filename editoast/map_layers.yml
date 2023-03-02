@@ -8,13 +8,14 @@ layers:
         cache_duration: 3600
         data_expr: track_section.data
         fields:
-          id: -> 'id'
+          id: ->> 'id'
           curves: ->> 'curves'
-          length: -> 'length'
-          extensions_sncf_line_code: -> 'extensions' -> 'sncf' -> 'line_code'
-          extensions_sncf_line_name: -> 'extensions' -> 'sncf' -> 'line_name'
-          extensions_sncf_track_name: -> 'extensions' -> 'sncf' -> 'track_name'
+          length: ->> 'length'
+          extensions_sncf_line_code: -> 'extensions' -> 'sncf' ->> 'line_code'
+          extensions_sncf_line_name: -> 'extensions' -> 'sncf' ->> 'line_name'
+          extensions_sncf_track_name: -> 'extensions' -> 'sncf' ->> 'track_name'
           loading_gauge_limits: ->> 'loading_gauge_limits'
+          feature_id_name: ->> 'id'
         joins:
           - inner join osrd_infra_tracksectionmodel track_section on track_section.obj_id = layer.obj_id and track_section.infra_id = layer.infra_id
 
@@ -27,26 +28,26 @@ layers:
         cache_duration: 3600
         data_expr: signal.data
         fields:
-          id: -> 'id'
-          track: -> 'track'
-          position: -> 'position'
-          direction: -> 'direction'
-          sight_distance: -> 'sight_distance'
-          linked_detector: -> 'linked_detector'
+          id: ->> 'id'
+          track: ->> 'track'
+          position: ->> 'position'
+          direction: ->> 'direction'
+          sight_distance: ->> 'sight_distance'
+          linked_detector: ->> 'linked_detector'
           logical_signals: ->> 'logical_signals'
-          extensions_sncf_angle_geo: -> 'extensions' -> 'sncf' -> 'angle_geo'
-          extensions_sncf_angle_sch: -> 'extensions' -> 'sncf' -> 'angle_sch'
+          extensions_sncf_angle_geo: -> 'extensions' -> 'sncf' ->> 'angle_geo'
+          extensions_sncf_angle_sch: -> 'extensions' -> 'sncf' ->> 'angle_sch'
           extensions_sncf_comment: -> 'extensions' -> 'sncf' ->> 'comment'
-          extensions_sncf_default_aspect: -> 'extensions' -> 'sncf' -> 'default_aspect'
-          extensions_sncf_installation_type: -> 'extensions' -> 'sncf' -> 'installation_type'
-          extensions_sncf_is_in_service: -> 'extensions' -> 'sncf' -> 'is_in_service'
-          extensions_sncf_is_lightable: -> 'extensions' -> 'sncf' -> 'is_lightable'
-          extensions_sncf_is_operational: -> 'extensions' -> 'sncf' -> 'is_operational'
-          extensions_sncf_label: -> 'extensions' -> 'sncf' -> 'label'
-          extensions_sncf_side: -> 'extensions' -> 'sncf' -> 'side'
-          extensions_sncf_support_type: -> 'extensions' -> 'sncf' -> 'support_type'
-          extensions_sncf_type_code: -> 'extensions' -> 'sncf' -> 'type_code'
-          extensions_sncf_value: -> 'extensions' -> 'sncf' -> 'value'
+          extensions_sncf_default_aspect: -> 'extensions' -> 'sncf' ->> 'default_aspect'
+          extensions_sncf_installation_type: -> 'extensions' -> 'sncf' ->> 'installation_type'
+          extensions_sncf_is_in_service: -> 'extensions' -> 'sncf' ->> 'is_in_service'
+          extensions_sncf_is_lightable: -> 'extensions' -> 'sncf' ->> 'is_lightable'
+          extensions_sncf_is_operational: -> 'extensions' -> 'sncf' ->> 'is_operational'
+          extensions_sncf_label: -> 'extensions' -> 'sncf' ->> 'label'
+          extensions_sncf_side: -> 'extensions' -> 'sncf' ->> 'side'
+          extensions_sncf_support_type: -> 'extensions' -> 'sncf' ->> 'support_type'
+          extensions_sncf_type_code: -> 'extensions' -> 'sncf' ->> 'type_code'
+          extensions_sncf_value: -> 'extensions' -> 'sncf' ->> 'value'
         joins:
           - inner join osrd_infra_signalmodel signal on signal.obj_id = layer.obj_id and signal.infra_id = layer.infra_id
 

@@ -244,13 +244,16 @@ pub fn get_mvt_tile_query(
         fields = &view
             .fields
             .iter()
-            .map(|(name, path)| format!("{data_expr} {path} as {name}", data_expr = view.data_expr))
+            .map(|(name, path)| format!(
+                "{data_expr} {path} as \"{name}\"",
+                data_expr = view.data_expr
+            ))
             .collect::<Vec<_>>()
             .join(", "),
         flattened_fields = keys
             .iter()
             .map(|key| format!(
-                ", {data_expr} -> '{field}' -> '{key}' as \"{field}_{key}\"",
+                ", {data_expr} -> '{field}' ->> '{key}' as \"{field}_{key}\"",
                 data_expr = view.data_expr,
                 field = view.field_to_flatten
             ))
