@@ -31,6 +31,7 @@ class TrainScheduleView(
     serializer_class = TrainScheduleSerializer
 
     def update(self, request, *args, **kwargs):
+        print("UPDATE !!!!")
         train_schedule: TrainSchedule = self.get_object()
         serializer = self.get_serializer(train_schedule, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -53,17 +54,16 @@ class TrainScheduleView(
                 break
 
         serializer.save()
-
         if not simulation_needed:
             return Response(serializer.data)
-
         # Create backend request payload
         request_payload = create_backend_request_payload([train_schedule])
         # Run standalone simulation
         response_payload = run_simulation(request_payload)
-        # Process simulation response
-        process_simulation_response(train_schedule.timetable.infra, [train_schedule], response_payload)
-        train_schedule.save()
+        simulation_output = process_simulation_response(train_schedule.timetable.infra, [train_schedule], response_payload)[0]
+        with transaction.atomic():
+            SimulationOutput.objects.filter(train_schedule=train_schedule).delete()
+            simulation_output.save()
         return Response(serializer.data)
 
     @action(detail=True)
@@ -125,9 +125,11 @@ class TrainScheduleView(
 
         # Create backend request payload
         request_payload = create_backend_request_payload(train_schedules)
+        print("request_payload", request_payload)
 
         # Run standalone simulation
         response_payload = run_simulation(request_payload)
+        print("response_payload", response_payload["eco_simulations"])
 
         # Process simulation response
         simulation_outputs = process_simulation_response(
