@@ -222,10 +222,10 @@ pub fn get_mvt_tile_query(
 ) -> String {
     format!(
         "
-        with mvtgeom as (
-            WITH bbox AS (
-                SELECT TileBBox($1, $2, $3, 3857) AS geom
-            )
+        WITH bbox AS (
+            SELECT TileBBox($1, $2, $3, 3857) AS geom
+        ),
+        mvtgeom as (
             SELECT ST_AsMVTGeom(geographic, bbox.geom, 4096, 64) AS geom, 
                 {fields}
                 {flattened_fields}
@@ -237,7 +237,7 @@ pub fn get_mvt_tile_query(
                 AND {on_field} && bbox.geom 
                 AND ST_GeometryType({on_field}) != 'ST_GeometryCollection'
         )
-        SELECT ST_AsMVT(mvtgeom.*, '{tile_name}') as mvt_tile
+        SELECT ST_AsMVT(mvtgeom, '{tile_name}') as mvt_tile
         FROM mvtgeom
         ",
         on_field = view.on_field,
@@ -245,7 +245,7 @@ pub fn get_mvt_tile_query(
             .fields
             .iter()
             .map(|(name, path)| format!(
-                "{data_expr} {path} as \"{name}\"",
+                "({data_expr} {path} as \"{name}\"",
                 data_expr = view.data_expr
             ))
             .collect::<Vec<_>>()

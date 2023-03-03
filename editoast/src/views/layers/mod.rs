@@ -157,7 +157,7 @@ async fn cache_and_get_mvt_tile(
     }
 
     let mvt_query = get_mvt_tile_query(&layer.table_name, view, &layer_slug, fields_to_flatten);
-    // println!("{}", mvt_query);
+    println!("{}", mvt_query);
     let mvt_tile = block::<_, Result<_>>(move || {
         let mut conn = db_pool.get().expect("Fail to get DB connection");
         match sql_query(mvt_query)
