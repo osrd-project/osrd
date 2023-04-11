@@ -51,9 +51,22 @@ def test_e2e():
             "front",
             "playwright",
             "test",
+            "create-project-study-scenario.spec.ts",
+            # "--debug",
             "--reporter=line",
         ],
         cwd=Path(__file__).parents[2],
         check=False,
     )
     assert result.returncode == 0
+
+
+
+# @pytest.fixture
+# def cleanup_project_study_scenario():
+#     yield
+
+
+# @pytest.mark.e2e
+# def test_create_project_study_scenario():
+#     pass
