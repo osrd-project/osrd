@@ -1,6 +1,8 @@
 package fr.sncf.osrd.envelope_sim;
 
 import com.google.common.collect.RangeMap;
+import fr.sncf.osrd.envelope_utils.CurveUtils;
+import fr.sncf.osrd.envelope_utils.Point2d;
 
 /**
  * An utility class to help simulate the train, using numerical integration.
@@ -19,14 +21,14 @@ public final class TrainPhysicsIntegrator {
     private final Action action;
     private final double directionSign;
 
-    private final RangeMap<Double, PhysicsRollingStock.TractiveEffortPoint[]> tractiveEffortCurveMap;
+    private final RangeMap<Double, Point2d[]> tractiveEffortCurveMap;
 
     private TrainPhysicsIntegrator(
             PhysicsRollingStock rollingStock,
             PhysicsPath path,
             Action action,
             double directionSign,
-            RangeMap<Double, PhysicsRollingStock.TractiveEffortPoint[]> tractiveEffortCurveMap
+            RangeMap<Double, Point2d[]> tractiveEffortCurveMap
     ) {
         this.rollingStock = rollingStock;
         this.path = path;
@@ -76,7 +78,12 @@ public final class TrainPhysicsIntegrator {
         double brakingForce = 0;
         var tractiveEffortCurve = tractiveEffortCurveMap.get(position);
         assert tractiveEffortCurve != null;
-        double maxTractionForce = PhysicsRollingStock.getMaxEffort(speed, tractiveEffortCurve);
+
+        //Simulate an electrification availability for tests further down
+        boolean electrification = path.isElectrified(position);
+
+        double maxTractionForce = rollingStock.getMaxTractionForce(speed, tractiveEffortCurve, electrification);
+
         double rollingResistance = rollingStock.getRollingResistance(speed);
         double weightForce = getWeightForce(rollingStock, path, position);
 
@@ -88,10 +95,14 @@ public final class TrainPhysicsIntegrator {
 
         if (action == Action.MAINTAIN) {
             tractionForce = rollingResistance - weightForce;
-            if (tractionForce <= maxTractionForce)
-                return newtonStep(timeStep, speed, 0, directionSign);
+            if (tractionForce <= maxTractionForce) {
+                rollingStock.updateEnergyStorages(tractionForce, speed, timeStep, electrification);
+                return newtonStep(timeStep, speed, 0., directionSign);
+            }
             else tractionForce = maxTractionForce;
         }
+
+        rollingStock.updateEnergyStorages(maxTractionForce, speed, timeStep, electrification);
 
         double acceleration = computeAcceleration(rollingStock, rollingResistance,
                 weightForce, speed, tractionForce, brakingForce, directionSign);

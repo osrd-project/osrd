@@ -1,6 +1,7 @@
 package fr.sncf.osrd.train;
 
 import static fr.sncf.osrd.envelope_sim.EnvelopeSimPath.ModeAndProfile;
+import static fr.sncf.osrd.envelope_utils.CurveUtils.interpolate;
 
 import com.google.common.collect.ImmutableRangeMap;
 import com.google.common.collect.Range;
@@ -8,9 +9,11 @@ import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import fr.sncf.osrd.envelope_sim.PhysicsRollingStock;
+import fr.sncf.osrd.envelope_sim.power.EnergySource;
+import fr.sncf.osrd.envelope_utils.Point2d;
 import fr.sncf.osrd.railjson.schema.rollingstock.RJSLoadingGaugeType;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
 
 
 /**
@@ -91,6 +94,13 @@ public class RollingStock implements PhysicsRollingStock {
 
     private final String defaultMode;
     public final String powerClass;
+    public final double motorEfficiency;
+
+    /** The different energy sources of the rollingStock */
+    public final List<EnergySource> energySources;
+
+    /** The power consumed by the auxiliaries */
+    public final double auxiliariesPower;
 
     @Override
     public double getMass() {
@@ -131,8 +141,53 @@ public class RollingStock implements PhysicsRollingStock {
     }
 
     @Override
+    public double getMaxTractionForce(double speed, Point2d[] tractiveEffortCurve, boolean electrification) {
+        var maxTractionForce = interpolate(speed, tractiveEffortCurve);
+        if (speed == 0 || energySources == null)
+            return maxTractionForce;
+        else {
+            // TODO: make sure in the case of a normal RS the maxtractionPower does not take over
+            var maxTractionPower = getMaxTractionPower(speed, electrification);
+            return Math.min(maxTractionForce, maxTractionPower / speed);
+        }
+    }
+
+    private double getMaxTractionPower(double speed, boolean electrification) {
+        var availablePower = 0;
+        for (var source : energySources) {
+            availablePower += source.getMaxOutputPower(speed, electrification);
+        }
+        return availablePower;
+    }
+
+    @Override
     public double getMaxBrakingForce(double speed) {
         return gamma * inertia;
+    }
+
+    @Override
+    public void updateEnergyStorages(double tractionForce, double speed, double timeStep, boolean electrification) {
+        if (energySources == null)
+            return;
+
+        // the total energy that will need to be used from the different energy sources
+        //TODO: take efficiencies into account
+        var remainingEnergy = tractionForce * speed * timeStep;
+        var leftOverEnergy = 0.;
+        for (var source : energySources) {
+            if (remainingEnergy > 0) { // if we still need some energy, get some from the source
+                var availableEnergy = source.getMaxOutputPower(speed, electrification) * timeStep;
+                var consumedEnergy = Math.min(availableEnergy, remainingEnergy);
+                source.consumeEnergy(consumedEnergy);
+                remainingEnergy -= consumedEnergy;
+                leftOverEnergy = availableEnergy - consumedEnergy;
+            }
+            else { // otherwise that means we've got all the energy we need for traction, maybe we can recharge
+                var receivableEnergy = source.getMaxInputPower(speed, electrification) * timeStep;
+                var inputEnergy = Math.max(receivableEnergy, -leftOverEnergy);
+                source.consumeEnergy(inputEnergy);
+            }
+        }
     }
 
     @Override
@@ -140,11 +195,11 @@ public class RollingStock implements PhysicsRollingStock {
         return gammaType;
     }
 
-    public record ModeEffortCurves(boolean isElectric, TractiveEffortPoint[] defaultCurve,
+    public record ModeEffortCurves(boolean isElectric, Point2d[] defaultCurve,
                                    ConditionalEffortCurve[] curves) {
     }
 
-    public record ConditionalEffortCurve(EffortCurveConditions cond, TractiveEffortPoint[] curve) {
+    public record ConditionalEffortCurve(EffortCurveConditions cond, Point2d[] curve) {
     }
 
     public record EffortCurveConditions(Comfort comfort, String electricalProfile) {
@@ -164,10 +219,10 @@ public class RollingStock implements PhysicsRollingStock {
         AC,
     }
 
-    protected record CurveAndCondition(TractiveEffortPoint[] curve, ModeAndProfile modeAndProfile) {
+    protected record CurveAndCondition(Point2d[] curve, ModeAndProfile modeAndProfile) {
     }
 
-    public record CurvesAndConditions(RangeMap<Double, TractiveEffortPoint[]> curves,
+    public record CurvesAndConditions(RangeMap<Double, Point2d[]> curves,
                                       RangeMap<Double, ModeAndProfile> conditions) {
     }
 
@@ -210,7 +265,7 @@ public class RollingStock implements PhysicsRollingStock {
     public CurvesAndConditions mapTractiveEffortCurves(RangeMap<Double, ModeAndProfile> modeAndProfileMap,
                                                        Comfort comfort, double pathLength) {
         TreeRangeMap<Double, ModeAndProfile> conditionsUsed = TreeRangeMap.create();
-        TreeRangeMap<Double, TractiveEffortPoint[]> res = TreeRangeMap.create();
+        TreeRangeMap<Double, Point2d[]> res = TreeRangeMap.create();
         var defaultCurve = findTractiveEffortCurve(defaultMode, null, comfort);
         res.put(Range.all(), defaultCurve.curve);
         conditionsUsed.put(Range.closed(0., pathLength), defaultCurve.modeAndProfile);
@@ -258,8 +313,8 @@ public class RollingStock implements PhysicsRollingStock {
             RJSLoadingGaugeType loadingGaugeType,
             Map<String, ModeEffortCurves> modes,
             String defaultMode,
-            String powerClass
-    ) {
+            String powerClass,
+            List<EnergySource> energySources) {
         this.id = id;
         this.A = a;
         this.B = b;
@@ -278,5 +333,15 @@ public class RollingStock implements PhysicsRollingStock {
         this.inertia = mass * inertiaCoefficient;
         this.loadingGaugeType = loadingGaugeType;
         this.powerClass = powerClass;
+        this.energySources = orderByPriority(energySources);
+        //TODO: change this later
+        this.motorEfficiency = 0.8;
+        this.auxiliariesPower = 0;
+    }
+
+    private List<EnergySource> orderByPriority(List<EnergySource> energySources) {
+        if (energySources != null)
+            energySources.sort(Comparator.comparing(EnergySource::getPriority));
+        return energySources;
     }
 }

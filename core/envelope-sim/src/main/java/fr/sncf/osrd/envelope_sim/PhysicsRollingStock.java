@@ -1,6 +1,9 @@
 package fr.sncf.osrd.envelope_sim;
 
 
+import fr.sncf.osrd.envelope_utils.CurveUtils;
+import fr.sncf.osrd.envelope_utils.Point2d;
+
 public interface PhysicsRollingStock {
     /** The mass of the train, in kilograms */
     double getMass();
@@ -24,35 +27,7 @@ public interface PhysicsRollingStock {
     double getRollingResistanceDeriv(double speed);
 
     /** Get the effort the train can apply at a given speed, in newtons */
-    static double getMaxEffort(double speed, TractiveEffortPoint[] tractiveEffortCurve) {
-        int index = 0;
-        int left = 0;
-        int right = tractiveEffortCurve.length - 1;
-        while (left <= right) {
-            // this line is to calculate the mean of the two values
-            int mid = (left + right) >>> 1;
-            if (Math.abs(tractiveEffortCurve[mid].speed - Math.abs(speed)) < 0.000001) {
-                index = mid;
-                break;
-            } else if (tractiveEffortCurve[mid].speed < Math.abs(speed)) {
-                left = mid + 1;
-                index = left;
-            } else {
-                right = mid - 1;
-            }
-        }
-        if (index == 0) {
-            return tractiveEffortCurve[0].maxEffort();
-        }
-        if (index == tractiveEffortCurve.length) {
-            return tractiveEffortCurve[index - 1].maxEffort();
-        }
-        TractiveEffortPoint previousPoint = tractiveEffortCurve[index - 1];
-        TractiveEffortPoint nextPoint = tractiveEffortCurve[index];
-        double coeff =
-                (previousPoint.maxEffort() - nextPoint.maxEffort()) / (previousPoint.speed() - nextPoint.speed());
-        return previousPoint.maxEffort() + coeff * (Math.abs(speed) - previousPoint.speed());
-    }
+    double getMaxTractionForce(double speed, Point2d[] tractiveEffortCurve, boolean electrification);
 
     /** The maximum constant deceleration, in m/s^2 */
     double getDeceleration();
@@ -60,9 +35,8 @@ public interface PhysicsRollingStock {
     /** The maximum braking force which can be applied at a given speed, in newtons */
     double getMaxBrakingForce(double speed);
 
-    /** The maximum acceleration, in m/s^2, which can be applied at a given speed, in m/s */
-    record TractiveEffortPoint(double speed, double maxEffort) {
-    }
+    /** If relevant, compute the delta of state of charge */
+    void updateEnergyStorages(double tractionForce, double speed, double timeStep, boolean electrification);
 
     enum GammaType {
         CONST,

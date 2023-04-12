@@ -7,6 +7,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import fr.sncf.osrd.railjson.schema.common.Identified;
 import java.util.Map;
 
+import java.util.ArrayList;
+
 public class RJSRollingStock implements Identified {
     public static final JsonAdapter<RJSRollingStock> adapter = new Moshi
             .Builder()
@@ -27,7 +29,7 @@ public class RJSRollingStock implements Identified {
      * <p>Engineers measured a number of effort curves for each rolling stock.
      * These are referenced from effort curve profiles.
      * Effort curves associate a speed to a traction force.
-     * https://en.wikipedia.org/wiki/Tractive_force#Tractive_effort_curves</p>
+     * <a href="https://en.wikipedia.org/wiki/Tractive_force#Tractive_effort_curves">...</a></p>
      * This match the default effort curve to take
      */
     @Json(name = "effort_curves")
@@ -91,6 +93,9 @@ public class RJSRollingStock implements Identified {
         CONST,
         MAX
     }
+
+    @Json(name = "energy_sources")
+    public ArrayList<RJSEnergySource> energySources = null;
 
     @SuppressFBWarnings("UWF_NULL_FIELD")
     public static final class RJSGamma {

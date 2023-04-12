@@ -1,17 +1,22 @@
 package fr.sncf.osrd.railjson.parser;
 
+import fr.sncf.osrd.envelope_sim.power.*;
+import fr.sncf.osrd.envelope_sim.power.storage.EnergyStorage;
+import fr.sncf.osrd.envelope_sim.power.storage.RefillLaw;
+import fr.sncf.osrd.envelope_utils.Point2d;
 import fr.sncf.osrd.railjson.parser.exceptions.InvalidRollingStock;
 import fr.sncf.osrd.railjson.parser.exceptions.InvalidRollingStockField;
 import fr.sncf.osrd.railjson.parser.exceptions.MissingRollingStockField;
-import fr.sncf.osrd.railjson.schema.rollingstock.RJSComfortType;
-import fr.sncf.osrd.railjson.schema.rollingstock.RJSEffortCurves;
-import fr.sncf.osrd.railjson.schema.rollingstock.RJSRollingResistance;
-import fr.sncf.osrd.railjson.schema.rollingstock.RJSRollingStock;
+import fr.sncf.osrd.railjson.schema.rollingstock.*;
 import fr.sncf.osrd.train.RollingStock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 
 public class RJSRollingStockParser {
@@ -91,6 +96,8 @@ public class RJSRollingStockParser {
             case CONST -> RollingStock.GammaType.CONST;
         };
 
+        var energySources = parseEnergySources(rjsRollingStock.energySources);
+
         return new RollingStock(
                 rjsRollingStock.getID(),
                 rjsRollingStock.length,
@@ -108,8 +115,42 @@ public class RJSRollingStockParser {
                 rjsRollingStock.loadingGauge,
                 modes,
                 rjsRollingStock.effortCurves.defaultMode,
-                rjsRollingStock.basePowerClass
+                rjsRollingStock.basePowerClass,
+                energySources
         );
+    }
+
+    private static List<EnergySource> parseEnergySources(ArrayList<RJSEnergySource> rjsEnergySources) {
+        return rjsEnergySources.stream().map(
+                RJSRollingStockParser::parseEnergySource
+        ).collect(Collectors.toList());
+    }
+
+    private static EnergySource parseEnergySource(RJSEnergySource rjsEnergySource) {
+        var maxInputPower =
+                new SpeedDependantPower(rjsEnergySource.maxInputPower.speeds, rjsEnergySource.maxInputPower.powers);
+        var maxOutputPower =
+                new SpeedDependantPower(rjsEnergySource.maxOutputPower.speeds, rjsEnergySource.maxOutputPower.powers);
+        var storage = parseEnergyStorage(rjsEnergySource.storage);
+        return switch (rjsEnergySource.type) {
+            case CATENARY -> new Catenary(maxInputPower, maxOutputPower, rjsEnergySource.efficiency);
+            case POWER_PACK -> new PowerPack(maxInputPower, maxOutputPower, storage, rjsEnergySource.efficiency);
+            case BATTERY -> new Battery(maxInputPower, maxOutputPower, storage, rjsEnergySource.efficiency);
+        };
+    }
+
+    private static EnergyStorage parseEnergyStorage(RJSEnergyStorage storage) {
+        return new EnergyStorage(
+                storage.capacity,
+                storage.initialSoc,
+                storage.socMin,
+                storage.socMax,
+                parseRefillLaw(storage.refillLaw)
+        );
+    }
+
+    private static RefillLaw parseRefillLaw(RJSRefillLaw refillLaw) {
+        return new RefillLaw(refillLaw.tauRech, refillLaw.socRef, refillLaw.Kp);
     }
 
     private static RJSRollingResistance.Davis parseRollingResistance(
@@ -159,7 +200,7 @@ public class RJSRollingStockParser {
         return new RollingStock.ModeEffortCurves(rjsMode.isElectric, defaultCurve, curves);
     }
 
-    private static RollingStock.TractiveEffortPoint[] parseEffortCurve(
+    private static Point2d[] parseEffortCurve(
             RJSEffortCurves.RJSEffortCurve rjsEffortCurve,
             String fieldKey
     ) throws InvalidRollingStockField {
@@ -171,7 +212,7 @@ public class RJSRollingStockParser {
             throw new InvalidRollingStock(
                     "Invalid rolling stock effort curve, speeds and max_efforts should be same length");
 
-        var tractiveEffortCurve  = new RollingStock.TractiveEffortPoint[rjsEffortCurve.speeds.length];
+        var tractiveEffortCurve  = new Point2d[rjsEffortCurve.speeds.length];
         for (int i = 0; i < rjsEffortCurve.speeds.length; i++) {
             var speed = rjsEffortCurve.speeds[i];
             if (speed < 0)
@@ -179,8 +220,8 @@ public class RJSRollingStockParser {
             var maxEffort = rjsEffortCurve.maxEfforts[i];
             if (maxEffort < 0)
                 throw new InvalidRollingStockField(fieldKey, "negative max effort");
-            tractiveEffortCurve[i] = new RollingStock.TractiveEffortPoint(speed, maxEffort);
-            assert i == 0 || tractiveEffortCurve[i - 1].speed() < speed;
+            tractiveEffortCurve[i] = new Point2d(speed, maxEffort);
+            assert i == 0 || tractiveEffortCurve[i - 1].x() < speed;
         }
         return tractiveEffortCurve;
     }
