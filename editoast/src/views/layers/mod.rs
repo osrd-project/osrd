@@ -11,7 +11,7 @@ use diesel::sql_types::Integer;
 use diesel::{sql_query, RunQueryDsl};
 use editoast_derive::EditoastError;
 use mvt_utils::{create_and_fill_mvt_tile, get_geo_json_sql_query, GeoJsonAndData};
-use redis::Client;
+use redis::cluster::ClusterClient;
 use serde::Deserialize;
 use serde_json::{json, Value as JsonValue};
 use thiserror::Error;
@@ -103,7 +103,7 @@ async fn cache_and_get_mvt_tile(
     params: Query<InfraQueryParam>,
     map_layers: Data<MapLayers>,
     db_pool: Data<DbPool>,
-    redis_client: Data<Client>,
+    redis_client: Data<ClusterClient>,
 ) -> Result<HttpResponse> {
     let (layer_slug, view_slug, z, x, y) = path.into_inner();
     let infra = params.infra;
@@ -120,7 +120,7 @@ async fn cache_and_get_mvt_tile(
         &Tile { x, y, z },
     );
 
-    let mut redis_conn = redis_client.get_tokio_connection_manager().await.unwrap();
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     let cached_value = get::<Vec<u8>>(&mut redis_conn, &cache_key).await;
 
     if let Some(value) = cached_value {

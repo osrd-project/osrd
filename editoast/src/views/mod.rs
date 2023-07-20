@@ -21,7 +21,7 @@ use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{block, Data, Json};
 use actix_web::{get, services};
 use diesel::{sql_query, RunQueryDsl};
-use redis::{cmd, Client};
+use redis::{cmd, cluster::ClusterClient};
 use serde_json::{json, Value as JsonValue};
 
 pub fn routes() -> impl HttpServiceFactory {
@@ -49,7 +49,7 @@ pub fn study_routes() -> impl HttpServiceFactory {
 }
 
 #[get("/health")]
-async fn health(db_pool: Data<DbPool>, redis_client: Data<Client>) -> Result<&'static str> {
+async fn health(db_pool: Data<DbPool>, redis_client: Data<ClusterClient>) -> Result<&'static str> {
     block::<_, Result<_>>(move || {
         let mut conn = db_pool.get()?;
         sql_query("SELECT 1").execute(&mut conn)?;
@@ -58,7 +58,7 @@ async fn health(db_pool: Data<DbPool>, redis_client: Data<Client>) -> Result<&'s
     .await
     .unwrap()?;
 
-    let mut conn = redis_client.get_tokio_connection_manager().await?;
+    let mut conn = redis_client.get_async_connection().await?;
     cmd("PING").query_async::<_, ()>(&mut conn).await.unwrap();
     Ok("ok")
 }

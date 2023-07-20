@@ -23,7 +23,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 FROM debian:bullseye-slim as runner
 
 RUN apt update -yqq && \
-    apt install -yqq --no-install-recommends libpq-dev curl ca-certificates libgeos-dev libjemalloc2 && \
+    apt install -yqq --no-install-recommends redis libpq-dev curl ca-certificates libgeos-dev libjemalloc2 && \
     apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false && \
     rm -rf /var/lib/apt/lists/*
 

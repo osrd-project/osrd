@@ -1,11 +1,10 @@
 use crate::error::Result;
-use redis::aio::ConnectionManager;
-use redis::{cmd, FromRedisValue, ToRedisArgs};
+use redis::{cmd, FromRedisValue, ToRedisArgs, cluster_async::ClusterConnection};
 
 /// Retrieve all keys matching the given `key_pattern`.
 ///
 /// Check redis pattern documentation [here](https://redis.io/commands/keys).
-pub async fn keys(redis: &mut ConnectionManager, key_pattern: &str) -> Result<Vec<String>> {
+pub async fn keys(redis: &mut ClusterConnection, key_pattern: &str) -> Result<Vec<String>> {
     Ok(cmd("KEYS")
         .arg(key_pattern)
         .query_async::<_, Vec<String>>(redis)
@@ -13,7 +12,7 @@ pub async fn keys(redis: &mut ConnectionManager, key_pattern: &str) -> Result<Ve
 }
 
 /// Delete redis values associated to the given keys.
-pub async fn delete(redis: &mut ConnectionManager, keys_to_delete: Vec<String>) -> Result<u64> {
+pub async fn delete(redis: &mut ClusterConnection, keys_to_delete: Vec<String>) -> Result<u64> {
     if keys_to_delete.is_empty() {
         return Ok(0);
     }
@@ -27,7 +26,7 @@ pub async fn delete(redis: &mut ConnectionManager, keys_to_delete: Vec<String>) 
 /// Sets redis value associated to a specific key
 /// The key will expire after cache_duration (in seconds)
 pub async fn set<T: ToRedisArgs>(
-    redis: &mut ConnectionManager,
+    redis: &mut ClusterConnection,
     key: &str,
     value: T,
     cache_duration: u32,
@@ -47,7 +46,7 @@ pub async fn set<T: ToRedisArgs>(
 
 /// Gets redis value associated to a specific key
 /// Returns None if key does not exists.
-pub async fn get<T: FromRedisValue>(redis: &mut ConnectionManager, cache_key: &str) -> Option<T> {
+pub async fn get<T: FromRedisValue>(redis: &mut ClusterConnection, cache_key: &str) -> Option<T> {
     cmd("GET")
         .arg(cache_key)
         .query_async::<_, Option<T>>(redis)
@@ -64,12 +63,12 @@ mod tests {
         map::redis_utils::{delete, get, keys, set},
     };
     use actix_web::test as actix_test;
-    use redis::aio::ConnectionManager;
+    use redis::cluster_async::ClusterConnection;
 
-    async fn create_redis_pool() -> ConnectionManager {
+    async fn create_redis_pool() -> ClusterConnection {
         let cfg = RedisConfig::default();
-        let redis = redis::Client::open(cfg.redis_url).unwrap();
-        redis.get_tokio_connection_manager().await.unwrap()
+        let redis = redis::cluster::ClusterClient::new(vec![cfg.redis_url]).unwrap();
+        redis.get_async_connection().await.unwrap()
     }
 
     #[actix_test]

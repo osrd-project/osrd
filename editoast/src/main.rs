@@ -108,7 +108,7 @@ async fn runserver(
         .max_size(pg_config.pool_size)
         .build(manager)
         .expect("Failed to create pool.");
-    let redis = redis::Client::open(redis_config.redis_url.clone()).unwrap();
+    let redis = redis::cluster::ClusterClient::new(vec![redis_config.redis_url.clone()]).unwrap();
 
     // Custom Json extractor configuration
     let json_cfg = JsonConfig::default()
@@ -116,7 +116,7 @@ async fn runserver(
         .error_handler(|err, _| err.into());
 
     // Set the default log level to 'info'
-    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("debug"));
 
     // Setup shared states
     let infra_caches = Data::new(CHashMap::<i64, InfraCache>::default());
@@ -160,8 +160,8 @@ async fn runserver(
 }
 
 async fn build_redis_pool_and_invalidate_all_cache(redis_url: &str, infra_id: i64) {
-    let redis = redis::Client::open(redis_url).unwrap();
-    let mut conn = redis.get_tokio_connection_manager().await.unwrap();
+    let redis = redis::cluster::ClusterClient::new(vec![redis_url]).unwrap();
+    let mut conn = redis.get_async_connection().await.unwrap();
     map::invalidate_all(
         &mut conn,
         &MapLayers::parse().layers.keys().cloned().collect(),

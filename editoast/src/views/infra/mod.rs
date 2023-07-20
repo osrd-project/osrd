@@ -28,7 +28,7 @@ use diesel::{sql_query, QueryableByName, RunQueryDsl};
 use editoast_derive::EditoastError;
 use futures::future::join_all;
 use futures::Future;
-use redis::Client;
+use redis::cluster::ClusterClient;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value as JsonValue};
 use std::result::Result as StdResult;
@@ -115,7 +115,7 @@ struct RefreshQueryParams {
 #[post("/refresh")]
 async fn refresh(
     db_pool: Data<DbPool>,
-    redis_client: Data<Client>,
+    redis_client: Data<ClusterClient>,
     query_params: Query<RefreshQueryParams>,
     infra_caches: Data<CHashMap<i64, InfraCache>>,
     map_layers: Data<MapLayers>,
@@ -155,7 +155,7 @@ async fn refresh(
     })
     .await
     .unwrap()?;
-    let mut conn = redis_client.get_tokio_connection_manager().await.unwrap();
+    let mut conn = redis_client.get_async_connection().await.unwrap();
     for infra_id in refreshed_infra.iter() {
         map::invalidate_all(
             &mut conn,
