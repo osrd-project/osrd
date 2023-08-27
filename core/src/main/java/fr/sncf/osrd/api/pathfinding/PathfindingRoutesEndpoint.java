@@ -1,6 +1,9 @@
 package fr.sncf.osrd.api.pathfinding;
 
 import static fr.sncf.osrd.api.pathfinding.LegacyRemainingDistanceEstimator.minDistanceBetweenSteps;
+import static fr.sncf.osrd.utils.KtToJavaConverter.toIntList;
+import static fr.sncf.osrd.utils.indexing.DirStaticIdxKt.toDirection;
+import static fr.sncf.osrd.utils.indexing.DirStaticIdxKt.toValue;
 
 import fr.sncf.osrd.api.ExceptionHandler;
 import fr.sncf.osrd.api.InfraManager;
@@ -19,11 +22,15 @@ import fr.sncf.osrd.railjson.schema.common.graph.EdgeDirection;
 import fr.sncf.osrd.reporting.exceptions.ErrorType;
 import fr.sncf.osrd.reporting.exceptions.OSRDError;
 import fr.sncf.osrd.reporting.warnings.DiagnosticRecorderImpl;
+import fr.sncf.osrd.sim_infra.api.SignalingSystem;
+import fr.sncf.osrd.sim_infra.impl.DebugViewersKt;
 import fr.sncf.osrd.train.RollingStock;
 import fr.sncf.osrd.utils.graph.LegacyGraphAdapter;
 import fr.sncf.osrd.utils.graph.Pathfinding;
 import fr.sncf.osrd.utils.graph.functional_interfaces.AStarHeuristic;
 import fr.sncf.osrd.utils.graph.functional_interfaces.EdgeToRanges;
+import fr.sncf.osrd.utils.indexing.MutableStaticIdxArrayList;
+import fr.sncf.osrd.utils.indexing.StaticIdxArrayListKt;
 import org.takes.Request;
 import org.takes.Response;
 import org.takes.Take;
@@ -32,6 +39,9 @@ import org.takes.rs.RsJson;
 import org.takes.rs.RsText;
 import org.takes.rs.RsWithBody;
 import org.takes.rs.RsWithStatus;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -45,11 +55,14 @@ public class PathfindingRoutesEndpoint implements Take {
         constraints.put(LegacyElectrificationConstraints.class, ErrorType.PathfindingElectrificationError);
     }
 
+    private final PathfindingBlocksEndpoint foo;
+
     /**
      * constructor
      */
     public PathfindingRoutesEndpoint(InfraManager infraHandler) {
         this.infraManager = infraHandler;
+        this.foo = new PathfindingBlocksEndpoint(infraManager);
     }
 
     @Override
@@ -64,7 +77,8 @@ public class PathfindingRoutesEndpoint implements Take {
             var reqWaypoints = request.waypoints;
 
             // load infra
-            var infra = infraManager.getInfra(request.infra, request.expectedVersion, recorder).java();
+            var fullInfra = infraManager.getInfra(request.infra, request.expectedVersion, recorder);
+            var infra = fullInfra.java();
 
             // load rolling stocks
             var rollingStocks = List.<RollingStock>of();
@@ -74,12 +88,54 @@ public class PathfindingRoutesEndpoint implements Take {
                         .toList();
 
             var path = runPathfinding(infra, reqWaypoints, rollingStocks);
+            for (var range : path.ranges()) {
+                if (range.edge().getEntrySignal() == null && range.edge().getExitSignal() == null)
+                    throw new OSRDError(ErrorType.PathfindingGenericError);
+            }
 
             var res = LegacyPathfindingResultConverter.convert(path, infra, recorder);
 
             validate(infra, res, reqWaypoints);
+            try {
+                var routes = new ArrayList<Integer>();
+                for (var route : path.ranges()) {
+                    for (int i = 0; i < fullInfra.rawInfra().getRoutes(); i++) {
+                        if (fullInfra.rawInfra().getRouteName(i).equals(route.edge().getInfraRoute().getID()))
+                            routes.add(i);
+                    }
+                }
+                PrintWriter writer = new PrintWriter("routes.dot", StandardCharsets.UTF_8);
+                writer.println("digraph blocks {");
+                int i = 0;
+                for (var route : routes) {
+                    for (var zonePathId : toIntList(fullInfra.rawInfra().getRoutePath(route))) {
+                        for (var dirChunk : toIntList(fullInfra.rawInfra().getZonePathChunks(zonePathId))) {
+                            writer.printf("\t%d -> %d [label=\"chunk=%s, zone=%d, route=%d\"];%n",
+                                    i,
+                                    i + 1,
+                                    String.format("%s %s", toValue(dirChunk), toDirection(dirChunk)),
+                                    zonePathId,
+                                    route
+                            );
+                            i++;
+                        }
+                    }
+                }
+                writer.println("}");
+                writer.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
 
-            return new RsJson(new RsWithBody(PathfindingResult.adapterResult.toJson(res)));
+            var sigsystems = new MutableStaticIdxArrayList<SignalingSystem>();
+            sigsystems.add(0);
+            sigsystems.add(1);
+            sigsystems.add(2);
+            var route = DebugViewersKt.makeRoute(fullInfra.rawInfra(), fullInfra.blockInfra(), sigsystems, 23987);
+
+            return foo.act(body);
+
+            //return new RsJson(new RsWithBody(PathfindingResult.adapterResult.toJson(res)));
         } catch (Throwable ex) {
             // TODO: include warnings in the response
             return ExceptionHandler.handle(ex);

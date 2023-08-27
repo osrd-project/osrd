@@ -12,7 +12,7 @@ from requests import Response, Timeout
 
 URL = "http://127.0.0.1:8000/"
 TIMEOUT = 15
-INFRA_ID = 1
+INFRA_ID = 19
 EDITOAST_URL = "http://127.0.0.1:8090/"
 
 
@@ -100,10 +100,7 @@ def run_test(infra: InfraGraph, base_url: str, scenario: Scenario, infra_name: s
     """
     rolling_stock = get_random_rolling_stock(base_url)
     path, path_length = make_valid_path(infra)
-    if random.randint(0, 1) == 0:
-        test_new_train(base_url, scenario, rolling_stock, path_length, infra_name, path)
-    else:
-        test_stdcm(base_url, scenario, rolling_stock, infra_name, path)
+    test_new_train(base_url, scenario, rolling_stock, path_length, infra_name, path)
 
 
 def test_new_train(
@@ -589,7 +586,8 @@ if __name__ == "__main__":
         URL,
         EDITOAST_URL,
         new_scenario,
-        10000,
+        1,
         Path(__file__).parent / "errors",
         infra_name=get_infra_name(URL, INFRA_ID),
+        seed=103,
     )

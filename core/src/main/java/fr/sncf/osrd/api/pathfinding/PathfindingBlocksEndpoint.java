@@ -36,6 +36,7 @@ import org.takes.rs.RsJson;
 import org.takes.rs.RsText;
 import org.takes.rs.RsWithBody;
 import org.takes.rs.RsWithStatus;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -59,11 +60,21 @@ public class PathfindingBlocksEndpoint implements Take {
         this.infraManager = infraManager;
     }
 
+    /** todo: delete */
     @Override
     public Response act(Request req) {
+        String body = null;
+        try {
+            body = new RqPrint(req).printBody();
+        } catch (IOException e) {
+            return ExceptionHandler.handle(e);
+        }
+        return act(body);
+    }
+
+    public Response act(String body) {
         var recorder = new DiagnosticRecorderImpl(false);
         try {
-            var body = new RqPrint(req).printBody();
             var request = PathfindingRequest.adapter.fromJson(body);
             if (request == null)
                 return new RsWithStatus(new RsText("missing request body"), 400);
@@ -88,6 +99,7 @@ public class PathfindingBlocksEndpoint implements Take {
             return new RsJson(new RsWithBody(PathfindingResult.adapterResult.toJson(res)));
         } catch (Throwable ex) {
             // TODO: include warnings in the response
+            System.out.println(ex);
             return ExceptionHandler.handle(ex);
         }
     }
@@ -186,7 +198,7 @@ public class PathfindingBlocksEndpoint implements Take {
             }
         }
         // It didn’t fail due to a constraint, no path exists
-        throw new OSRDError(ErrorType.PathfindingGenericError);
+        throw new RuntimeException("no path found on block version");
     }
 
     /**

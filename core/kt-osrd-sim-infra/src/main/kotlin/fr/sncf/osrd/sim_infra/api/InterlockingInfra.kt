@@ -38,6 +38,7 @@ interface ReservationInfra : LocationInfra {
     fun findZonePath(entry: DirDetectorId, exit: DirDetectorId,
                      movableElements: StaticIdxList<TrackNode>,
                      trackNodeConfigs: StaticIdxList<TrackNodeConfig>): ZonePathId?
+    @JvmName("getZonePathEntry")
     fun getZonePathEntry(zonePath: ZonePathId): DirDetectorId
     @JvmName("getZonePathExit")
     fun getZonePathExit(zonePath: ZonePathId): DirDetectorId
