@@ -50,6 +50,36 @@ components:
       - $ref: '#/components/schemas/AllowanceTimePerDistanceValue'
       - $ref: '#/components/schemas/AllowanceTimeValue'
       - $ref: '#/components/schemas/AllowancePercentValue'
+    ApplicableDirections:
+      enum:
+      - START_TO_STOP
+      - STOP_TO_START
+      - BOTH
+      type: string
+    ApplicableDirectionsTrackRange:
+      properties:
+        applicable_directions:
+          $ref: '#/components/schemas/ApplicableDirections'
+        begin:
+          format: double
+          type: number
+        end:
+          format: double
+          type: number
+        track:
+          $ref: '#/components/schemas/Identifier'
+      required:
+      - track
+      - begin
+      - end
+      - applicable_directions
+      type: object
+    AttachedObjects:
+      allOf:
+      - additionalProperties: false
+        type: object
+      - type: object
+      description: Objects attached to a track section, grouped by type
     Battery:
       description: energy source for a rolling stock representing a battery
       properties:
@@ -76,37 +106,47 @@ components:
       - efficiency
       type: object
     BoundingBox:
-      description: A bounding box
+      description: A bounding box represented by its top-left and bottom-right corners
       items:
+        description: A bounding box represented by its top-left and bottom-right corners
         items:
-          type: integer
-        maxItems: 2
-        minItems: 2
+          allOf:
+          - format: double
+            type: number
+          - format: double
+            type: number
         type: array
       maxItems: 2
       minItems: 2
       type: array
-    Catenary:
-      description: energy source for a rolling stock representing a catenary
+    BufferStop:
       properties:
-        efficiency:
-          format: float
-          maximum: 1
-          minimum: 0
+        id:
+          $ref: '#/components/schemas/Identifier'
+        position:
+          format: double
           type: number
-        energy_source_type:
-          enum:
-          - Catenary
-          type: string
-        max_input_power:
-          $ref: '#/components/schemas/SpeedDependantPower'
-        max_output_power:
-          $ref: '#/components/schemas/SpeedDependantPower'
+        track:
+          $ref: '#/components/schemas/Identifier'
       required:
-      - energy_source_type
-      - max_input_power
-      - max_output_power
-      - efficiency
+      - id
+      - track
+      - position
+      type: object
+    Catenary:
+      properties:
+        id:
+          $ref: '#/components/schemas/Identifier'
+        track_ranges:
+          items:
+            $ref: '#/components/schemas/ApplicableDirectionsTrackRange'
+          type: array
+        voltage:
+          $ref: '#/components/schemas/NonBlankString'
+      required:
+      - id
+      - voltage
+      - track_ranges
       type: object
     CatenaryRange:
       properties:
@@ -152,41 +192,100 @@ components:
         curve:
           $ref: '#/components/schemas/EffortCurve'
       type: object
+    Conflict:
+      properties:
+        conflict_type:
+          $ref: '#/components/schemas/ConflictType'
+        end_time:
+          format: int64
+          minimum: 0
+          type: integer
+        start_time:
+          format: int64
+          minimum: 0
+          type: integer
+        train_ids:
+          items:
+            format: int64
+            type: integer
+          type: array
+        train_names:
+          items:
+            type: string
+          type: array
+      required:
+      - train_ids
+      - train_names
+      - start_time
+      - end_time
+      - conflict_type
+      type: object
+    ConflictType:
+      enum:
+      - Spacing
+      - Routing
+      type: string
+    Curve:
+      properties:
+        begin:
+          format: double
+          type: number
+        end:
+          format: double
+          type: number
+        radius:
+          format: double
+          type: number
+      required:
+      - radius
+      - begin
+      - end
+      type: object
     DeleteOperation:
+      description: A delete operation. Contains same information as a object ref but has another serialization.
       properties:
         obj_id:
-          example: bd840b06-84ba-4566-98c1-ccf0196c5f16
           type: string
         obj_type:
           $ref: '#/components/schemas/ObjectType'
-        operation_type:
-          enum:
-          - DELETE
-          type: string
       required:
-      - operation_type
-      - obj_type
       - obj_id
+      - obj_type
+      type: object
+    Detector:
+      properties:
+        applicable_directions:
+          $ref: '#/components/schemas/ApplicableDirections'
+        id:
+          $ref: '#/components/schemas/Identifier'
+        position:
+          format: double
+          type: number
+        track:
+          $ref: '#/components/schemas/Identifier'
+      required:
+      - id
+      - track
+      - position
+      - applicable_directions
+      type: object
     Direction:
       enum:
       - START_TO_STOP
       - STOP_TO_START
       type: string
     DirectionalTrackRange:
-      description: Track range associated with a direction
       properties:
         begin:
-          format: float
+          format: double
           type: number
         direction:
           $ref: '#/components/schemas/Direction'
         end:
-          example: 100.0
-          format: float
+          format: double
           type: number
         track:
-          example: 01234567-89ab-cdef-0123-456789abcdef
-          type: string
+          $ref: '#/components/schemas/Identifier'
       required:
       - track
       - begin
@@ -269,6 +368,11 @@ components:
       - mode_handled
       - object_type
       - profile_handled
+    Endpoint:
+      enum:
+      - BEGIN
+      - END
+      type: string
     EnergySource:
       description: enery source of a rolling stock
       discriminator:
@@ -374,50 +478,99 @@ components:
       - coordinates
       - type
       type: object
-    Geometry:
-      description: Definition of a GeoJSON geometry
+    GeometryValue:
+      description: A GeoJSON geometry item
       oneOf:
-      - $ref: '#/components/schemas/Point'
-      - $ref: '#/components/schemas/LineString'
-      - $ref: '#/components/schemas/Polygon'
-      - $ref: '#/components/schemas/MultiPoint'
-      - $ref: '#/components/schemas/MultiLineString'
-      - $ref: '#/components/schemas/MultiPolygon'
-      type: object
+      - properties:
+          coordinates:
+            $ref: '#/components/schemas/PointValue'
+          type:
+            enum:
+            - Point
+            type: string
+        required:
+        - type
+        - coordinates
+        type: object
+      - properties:
+          coordinates:
+            $ref: '#/components/schemas/MultiPointValue'
+          type:
+            enum:
+            - MultiPoint
+            type: string
+        required:
+        - type
+        - coordinates
+        type: object
+      - properties:
+          coordinates:
+            $ref: '#/components/schemas/LineStringValue'
+          type:
+            enum:
+            - LineString
+            type: string
+        required:
+        - type
+        - coordinates
+        type: object
+      - properties:
+          coordinates:
+            $ref: '#/components/schemas/MultiLineStringValue'
+          type:
+            enum:
+            - MultiLineString
+            type: string
+        required:
+        - type
+        - coordinates
+        type: object
+      - properties:
+          coordinates:
+            $ref: '#/components/schemas/PolygonValue'
+          type:
+            enum:
+            - Polygon
+            type: string
+        required:
+        - type
+        - coordinates
+        type: object
+      - properties:
+          coordinates:
+            $ref: '#/components/schemas/MultiPolygonValue'
+          type:
+            enum:
+            - MultiPolygon
+            type: string
+        required:
+        - type
+        - coordinates
+        type: object
+    Identifier:
+      description: A wrapper around a String that ensures that the string is not empty and not longer than 255 characters.
+      type: string
     Infra:
       properties:
         created:
-          format: date
+          format: date-time
           type: string
         generated_version:
           example: '1'
           nullable: true
           type: string
         id:
+          format: int64
           type: integer
         locked:
           type: boolean
         modified:
-          format: date
+          format: date-time
           type: string
         name:
           type: string
         railjson_version:
           example: 3.3.1
-          type: string
-        state:
-          enum:
-          - NOT_LOADED
-          - INITIALIZING
-          - DOWNLOADING
-          - PARSING_JSON
-          - PARSING_INFRA
-          - ADAPTING_KOTLIN
-          - LOADING_SIGNALS
-          - BUILDING_BLOCKS
-          - CACHED
-          - TRANSIENT_ERROR
-          - ERROR
           type: string
         version:
           example: '1'
@@ -425,78 +578,273 @@ components:
       required:
       - id
       - name
-      - version
       - railjson_version
+      - version
       - generated_version
+      - locked
       - created
       - modified
-      - locked
-      - state
-    InfraError:
-      description: An infra error or warning
-      properties:
-        geographic:
-          $ref: '#/components/schemas/Geometry'
-          description: Geojson of the geographic geometry of the error
-          nullable: true
-        information:
-          description: Information about the error (check schema documentation for more details)
-          properties:
-            error_type:
-              $ref: '#/components/schemas/InfraErrorType'
-            field:
-              type: string
-            is_warning:
-              type: boolean
-            obj_id:
-              type: string
-            obj_type:
-              enum:
-              - TrackSection
-              - Signal
-              - BufferStop
-              - Detector
-              - Switch
-              - Route
-              type: string
-          required:
-          - obj_id
-          - obj_type
-          - error_type
-          - is_warning
-          type: object
-        schematic:
-          description: Geojson of the schematic geometry of the error
-          nullable: true
-          type: object
-      required:
-      - information
       type: object
+    InfraError:
+      allOf:
+      - $ref: '#/components/schemas/InfraErrorType'
+      - properties:
+          field:
+            nullable: true
+            type: string
+          is_warning:
+            type: boolean
+          obj_id:
+            type: string
+          obj_type:
+            $ref: '#/components/schemas/ObjectType'
+        required:
+        - obj_id
+        - obj_type
+        - is_warning
+        type: object
     InfraErrorType:
-      description: Type of the infra error
+      oneOf:
+      - properties:
+          error_type:
+            enum:
+            - duplicated_group
+            type: string
+          original_group_path:
+            type: string
+        required:
+        - original_group_path
+        - error_type
+        type: object
+      - properties:
+          error_type:
+            enum:
+            - empty_object
+            type: string
+        required:
+        - error_type
+        type: object
+      - properties:
+          error_type:
+            enum:
+            - invalid_group
+            type: string
+          group:
+            type: string
+          switch_type:
+            type: string
+        required:
+        - group
+        - switch_type
+        - error_type
+        type: object
+      - properties:
+          error_type:
+            enum:
+            - invalid_reference
+            type: string
+          reference:
+            $ref: '#/components/schemas/ObjectRef'
+        required:
+        - reference
+        - error_type
+        type: object
+      - properties:
+          error_type:
+            enum:
+            - invalid_route
+            type: string
+        required:
+        - error_type
+        type: object
+      - properties:
+          error_type:
+            enum:
+            - invalid_switch_ports
+            type: string
+        required:
+        - error_type
+        type: object
+      - properties:
+          error_type:
+            enum:
+            - missing_route
+            type: string
+        required:
+        - error_type
+        type: object
+      - properties:
+          endpoint:
+            $ref: '#/components/schemas/Endpoint'
+          error_type:
+            enum:
+            - missing_buffer_stop
+            type: string
+        required:
+        - endpoint
+        - error_type
+        type: object
+      - properties:
+          error_type:
+            enum:
+            - object_out_of_path
+            type: string
+          reference:
+            $ref: '#/components/schemas/ObjectRef'
+        required:
+        - reference
+        - error_type
+        type: object
+      - properties:
+          error_type:
+            enum:
+            - odd_buffer_stop_location
+            type: string
+        required:
+        - error_type
+        type: object
+      - properties:
+          error_type:
+            enum:
+            - out_of_range
+            type: string
+          expected_range:
+            items:
+              format: double
+              type: number
+            type: array
+          position:
+            format: double
+            type: number
+        required:
+        - position
+        - expected_range
+        - error_type
+        type: object
+      - properties:
+          error_type:
+            enum:
+            - overlapping_catenaries
+            type: string
+          reference:
+            $ref: '#/components/schemas/ObjectRef'
+        required:
+        - reference
+        - error_type
+        type: object
+      - properties:
+          error_type:
+            enum:
+            - overlapping_speed_sections
+            type: string
+          reference:
+            $ref: '#/components/schemas/ObjectRef'
+        required:
+        - reference
+        - error_type
+        type: object
+      - properties:
+          error_type:
+            enum:
+            - overlapping_switches
+            type: string
+          reference:
+            $ref: '#/components/schemas/ObjectRef'
+        required:
+        - reference
+        - error_type
+        type: object
+      - properties:
+          error_type:
+            enum:
+            - overlapping_track_links
+            type: string
+          reference:
+            $ref: '#/components/schemas/ObjectRef'
+        required:
+        - reference
+        - error_type
+        type: object
+      - properties:
+          error_type:
+            enum:
+            - unknown_port_name
+            type: string
+          port_name:
+            type: string
+        required:
+        - port_name
+        - error_type
+        type: object
+      - properties:
+          error_type:
+            enum:
+            - unused_port
+            type: string
+          port_name:
+            type: string
+        required:
+        - port_name
+        - error_type
+        type: object
+    InfraForm:
+      properties:
+        name:
+          type: string
+      required:
+      - name
+      type: object
+    InfraPatchForm:
+      description: Patch form for a project
+      properties:
+        name:
+          nullable: true
+          type: string
+      type: object
+    InfraState:
       enum:
-      - duplicated_group
-      - empty_object
-      - invalid_group
-      - invalid_reference
-      - invalid_route
-      - invalid_switch_ports
-      - missing_route
-      - missing_buffer_stop
-      - object_out_of_path
-      - odd_buffer_stop_location
-      - out_of_range
-      - overlapping_speed_sections
-      - overlapping_switches
-      - overlapping_track_links
-      - overlapping_catenaries
-      - unknown_port_name
-      - unused_port
+      - NOT_LOADED
+      - INITIALIZING
+      - DOWNLOADING
+      - PARSING_JSON
+      - PARSING_INFRA
+      - ADAPTING_KOTLIN
+      - LOADING_SIGNALS
+      - BUILDING_BLOCKS
+      - CACHED
+      - TRANSIENT_ERROR
+      - ERROR
       type: string
+    InfraStateResponse:
+      properties:
+        last_status:
+          allOf:
+          - $ref: '#/components/schemas/InfraState'
+          nullable: true
+        status:
+          $ref: '#/components/schemas/InfraState'
+      required:
+      - status
+      type: object
+    InfraWithState:
+      allOf:
+      - $ref: '#/components/schemas/Infra'
+      - properties:
+          state:
+            $ref: '#/components/schemas/InfraState'
+        required:
+        - state
+        type: object
     InvalidTrainValues:
       enum:
       - NewerRollingStock
       - NewerInfra
+      type: string
+    Level:
+      enum:
+      - warnings
+      - errors
+      - all
       type: string
     LightRollingStock:
       allOf:
@@ -534,38 +882,61 @@ components:
         - liveries
         - effort_curves
         type: object
-    LineString:
-      description: GeoJSon geometry
+    LineStringValue:
+      items:
+        items:
+          format: double
+          type: number
+        type: array
+      type: array
+    LoadingGaugeLimit:
       properties:
-        coordinates:
+        begin:
+          format: double
+          type: number
+        category:
+          $ref: '#/components/schemas/LoadingGaugeType'
+        end:
+          format: double
+          type: number
+      required:
+      - category
+      - begin
+      - end
+      type: object
+    LoadingGaugeType:
+      enum:
+      - G1
+      - G2
+      - GA
+      - GB
+      - GB1
+      - GC
+      - FR3.3
+      - FR3.3/GB/G2
+      - GLOTT
+      type: string
+    LogicalSignal:
+      properties:
+        next_signaling_systems:
           items:
-            $ref: '#/components/schemas/Point3D'
+            type: string
           type: array
-        type:
-          enum:
-          - LineString
+        settings:
+          additionalProperties:
+            $ref: '#/components/schemas/NonBlankString'
+          type: object
+        signaling_system:
           type: string
       required:
-      - type
-      - coordinates
+      - signaling_system
+      - next_signaling_systems
+      - settings
       type: object
-    MultiLineString:
-      description: GeoJSon geometry
-      properties:
-        coordinates:
-          items:
-            items:
-              $ref: '#/components/schemas/Point3D'
-            type: array
-          type: array
-        type:
-          enum:
-          - MultiLineString
-          type: string
-      required:
-      - type
-      - coordinates
-      type: object
+    MultiLineStringValue:
+      items:
+        $ref: '#/components/schemas/LineStringValue'
+      type: array
     MultiPoint:
       description: GeoJSon geometry
       properties:
@@ -581,25 +952,14 @@ components:
       - type
       - coordinates
       type: object
-    MultiPolygon:
-      description: GeoJSon geometry
-      properties:
-        coordinates:
-          items:
-            items:
-              items:
-                $ref: '#/components/schemas/Point3D'
-              type: array
-            type: array
-          type: array
-        type:
-          enum:
-          - MultiPolygon
-          type: string
-      required:
-      - type
-      - coordinates
-      type: object
+    MultiPointValue:
+      items:
+        $ref: '#/components/schemas/PointValue'
+      type: array
+    MultiPolygonValue:
+      items:
+        $ref: '#/components/schemas/PolygonValue'
+      type: array
     Neutral:
       properties:
         lower_pantograph:
@@ -611,6 +971,35 @@ components:
       required:
       - lower_pantograph
       - object_type
+    NeutralSection:
+      description: |-
+        Neutral sections are portions of track where trains aren't allowed to pull power from catenaries. They have to rely on inertia to cross such sections.
+
+        In practice, neutral sections are delimited by signs. In OSRD, neutral sections are directional to allow accounting for different sign placement depending on the direction.
+
+        For more details see [the documentation](https://osrd.fr/en/docs/explanation/neutral_sections/).
+      properties:
+        announcement_track_ranges:
+          items:
+            $ref: '#/components/schemas/DirectionalTrackRange'
+          type: array
+        id:
+          $ref: '#/components/schemas/Identifier'
+        lower_pantograph:
+          type: boolean
+        track_ranges:
+          items:
+            $ref: '#/components/schemas/DirectionalTrackRange'
+          type: array
+      required:
+      - id
+      - announcement_track_ranges
+      - track_ranges
+      - lower_pantograph
+      type: object
+    NonBlankString:
+      description: A wrapper around a String that ensures that the string is not empty.
+      type: string
     NonElectrified:
       properties:
         object_type:
@@ -619,13 +1008,23 @@ components:
           type: string
       required:
       - object_type
+    ObjectRef:
+      properties:
+        obj_id:
+          type: string
+        type:
+          $ref: '#/components/schemas/ObjectType'
+      required:
+      - type
+      - obj_id
+      type: object
     ObjectType:
-      description: Type of the object
       enum:
       - TrackSection
       - Signal
       - SpeedSection
       - Detector
+      - NeutralSection
       - TrackSectionLink
       - Switch
       - SwitchType
@@ -636,28 +1035,104 @@ components:
       type: string
     Operation:
       oneOf:
-      - $ref: '#/components/schemas/RailjsonObject'
-      - $ref: '#/components/schemas/DeleteOperation'
-      - $ref: '#/components/schemas/UpdateOperation'
-    OperationObject:
-      properties:
-        obj_type:
-          $ref: '#/components/schemas/ObjectType'
-        operation_type:
-          enum:
-          - CREATE
-          - UPDATE
-          type: string
-        railjson:
-          $ref: '#/components/schemas/Railjson'
-      required:
-      - operation_type
-      - obj_type
-      - railjson
+      - allOf:
+        - $ref: '#/components/schemas/RailjsonObject'
+        - properties:
+            operation_type:
+              enum:
+              - CREATE
+              type: string
+          required:
+          - operation_type
+          type: object
+      - allOf:
+        - $ref: '#/components/schemas/UpdateOperation'
+        - properties:
+            operation_type:
+              enum:
+              - UPDATE
+              type: string
+          required:
+          - operation_type
+          type: object
+      - allOf:
+        - $ref: '#/components/schemas/DeleteOperation'
+        - properties:
+            operation_type:
+              enum:
+              - DELETE
+              type: string
+          required:
+          - operation_type
+          type: object
     OperationResult:
       oneOf:
-      - $ref: '#/components/schemas/DeleteOperation'
-      - $ref: '#/components/schemas/OperationObject'
+      - allOf:
+        - $ref: '#/components/schemas/RailjsonObject'
+        - properties:
+            operation_type:
+              enum:
+              - CREATE
+              type: string
+          required:
+          - operation_type
+          type: object
+      - allOf:
+        - $ref: '#/components/schemas/RailjsonObject'
+        - properties:
+            operation_type:
+              enum:
+              - UPDATE
+              type: string
+          required:
+          - operation_type
+          type: object
+      - allOf:
+        - $ref: '#/components/schemas/ObjectRef'
+        - properties:
+            operation_type:
+              enum:
+              - DELETE
+              type: string
+          required:
+          - operation_type
+          type: object
+    OperationalPoint:
+      properties:
+        extensions:
+          $ref: '#/components/schemas/OperationalPointExtensions'
+        id:
+          $ref: '#/components/schemas/Identifier'
+        parts:
+          items:
+            $ref: '#/components/schemas/OperationalPointPart'
+          type: array
+      required:
+      - id
+      - parts
+      type: object
+    OperationalPointExtensions:
+      properties:
+        identifier:
+          allOf:
+          - $ref: '#/components/schemas/OperationalPointIdentifierExtension'
+          nullable: true
+        sncf:
+          allOf:
+          - $ref: '#/components/schemas/OperationalPointSncfExtension'
+          nullable: true
+      type: object
+    OperationalPointIdentifierExtension:
+      properties:
+        name:
+          $ref: '#/components/schemas/NonBlankString'
+        uic:
+          format: int64
+          type: integer
+      required:
+      - name
+      - uic
+      type: object
     OperationalPointLocation:
       properties:
         type:
@@ -671,36 +1146,150 @@ components:
       - uic
       - type
       type: object
-    Patch:
-      description: A JSONPatch document as defined by RFC 6902
+    OperationalPointPart:
       properties:
-        from:
-          description: A string containing a JSON Pointer value.
-          type: string
-        op:
-          description: The operation to be performed
-          enum:
-          - add
-          - remove
-          - replace
-          - move
-          - copy
-          - test
-          type: string
-        path:
-          description: A JSON-Pointer
-          type: string
-        value:
-          description: The value to be used within the operations.
-          type: object
+        position:
+          format: double
+          type: number
+        track:
+          $ref: '#/components/schemas/Identifier'
       required:
-      - op
-      - path
-    Patches:
-      description: A list of Patch
-      items:
-        $ref: '#/components/schemas/Patch'
-      type: array
+      - track
+      - position
+      type: object
+    OperationalPointSncfExtension:
+      properties:
+        ch:
+          type: string
+        ch_long_label:
+          $ref: '#/components/schemas/NonBlankString'
+        ch_short_label:
+          $ref: '#/components/schemas/NonBlankString'
+        ci:
+          format: int64
+          type: integer
+        trigram:
+          type: string
+      required:
+      - ci
+      - ch
+      - ch_short_label
+      - ch_long_label
+      - trigram
+      type: object
+    PaginatedInfraErrors:
+      description: A paginated response
+      properties:
+        count:
+          description: The total number of items
+          format: int64
+          type: integer
+        next:
+          description: The next page number
+          format: int64
+          nullable: true
+          type: integer
+        previous:
+          description: The previous page number
+          format: int64
+          nullable: true
+          type: integer
+        results:
+          description: The list of results
+          items:
+            $ref: '#/components/schemas/InfraError'
+          type: array
+      required:
+      - count
+      - previous
+      - next
+      - results
+      type: object
+    PaginatedInfraWithState:
+      description: A paginated response
+      properties:
+        count:
+          description: The total number of items
+          format: int64
+          type: integer
+        next:
+          description: The next page number
+          format: int64
+          nullable: true
+          type: integer
+        previous:
+          description: The previous page number
+          format: int64
+          nullable: true
+          type: integer
+        results:
+          description: The list of results
+          items:
+            $ref: '#/components/schemas/InfraWithState'
+          type: array
+      required:
+      - count
+      - previous
+      - next
+      - results
+      type: object
+    PaginatedInfras:
+      description: A paginated response
+      properties:
+        count:
+          description: The total number of items
+          format: int64
+          type: integer
+        next:
+          description: The next page number
+          format: int64
+          nullable: true
+          type: integer
+        previous:
+          description: The previous page number
+          format: int64
+          nullable: true
+          type: integer
+        results:
+          description: The list of results
+          items:
+            $ref: '#/components/schemas/InfraWithState'
+          type: array
+      required:
+      - count
+      - previous
+      - next
+      - results
+      type: object
+    Panel:
+      properties:
+        angle_geo:
+          format: double
+          type: number
+        angle_sch:
+          format: double
+          type: number
+        position:
+          format: double
+          type: number
+        side:
+          $ref: '#/components/schemas/Side'
+        track:
+          $ref: '#/components/schemas/Identifier'
+        type:
+          $ref: '#/components/schemas/NonBlankString'
+        value:
+          allOf:
+          - $ref: '#/components/schemas/NonBlankString'
+          nullable: true
+      required:
+      - track
+      - position
+      - angle_geo
+      - angle_sch
+      - side
+      - type
+      type: object
     Path:
       properties:
         created:
@@ -840,6 +1429,60 @@ components:
       - track_section
       - geo_cordinate
       type: object
+    PathfindingInput:
+      properties:
+        ending:
+          $ref: '#/components/schemas/PathfindingTrackLocationInput'
+        starting:
+          $ref: '#/components/schemas/PathfindingTrackLocationDirInput'
+      required:
+      - starting
+      - ending
+      type: object
+    PathfindingOutput:
+      properties:
+        detectors:
+          items:
+            $ref: '#/components/schemas/Identifier'
+          type: array
+        switches_directions:
+          additionalProperties:
+            $ref: '#/components/schemas/Identifier'
+          type: object
+        track_ranges:
+          items:
+            $ref: '#/components/schemas/DirectionalTrackRange'
+          type: array
+      required:
+      - track_ranges
+      - detectors
+      - switches_directions
+      type: object
+    PathfindingTrackLocationDirInput:
+      properties:
+        direction:
+          $ref: '#/components/schemas/Direction'
+        position:
+          format: double
+          type: number
+        track:
+          $ref: '#/components/schemas/Identifier'
+      required:
+      - track
+      - position
+      - direction
+      type: object
+    PathfindingTrackLocationInput:
+      properties:
+        position:
+          format: double
+          type: number
+        track:
+          $ref: '#/components/schemas/Identifier'
+      required:
+      - track
+      - position
+      type: object
     Point:
       description: GeoJSon geometry
       properties:
@@ -860,23 +1503,20 @@ components:
       maxItems: 3
       minItems: 2
       type: array
-    Polygon:
-      description: GeoJSon geometry
-      properties:
-        coordinates:
+    PointValue:
+      items:
+        format: double
+        type: number
+      type: array
+    PolygonValue:
+      items:
+        items:
           items:
-            items:
-              $ref: '#/components/schemas/Point3D'
-            type: array
+            format: double
+            type: number
           type: array
-        type:
-          enum:
-          - Polygon
-          type: string
-      required:
-      - type
-      - coordinates
-      type: object
+        type: array
+      type: array
     PowerPack:
       description: energy source for a rolling stock representing a power pack (hydrogen, fuel...)
       properties:
@@ -1025,82 +1665,207 @@ components:
           items:
             type: string
           type: array
-    Railjson:
-      additionalProperties: true
-      description: This field follows railjson format
-      example:
-        curves: []
-        geo:
-          coordinates:
-          - - 1.0
-            - 41.0
-          - - 2.0
-            - 42.0
-          type: LineString
-        id: bd840b06-84ba-4566-98c1-ccf0196c5f16
-        length: 1000
-        line_code: 1
-        line_name: my line
-        navigability: BOTH
-        sch:
-          coordinates:
-          - - 1.0
-            - 41.0
-          - - 2.0
-            - 42.0
-          type: LineString
-        slopes:
-        - begin: 250
-          end: 500
-          gradient: -1
-        track_name: track name
-        track_number: 1
-      properties:
-        id:
-          type: string
-      required:
-      - id
-      type: object
-    RailjsonFile:
+    RailJson:
       properties:
         buffer_stops:
+          items:
+            $ref: '#/components/schemas/BufferStop'
           type: array
         catenaries:
+          items:
+            $ref: '#/components/schemas/Catenary'
           type: array
         detectors:
+          items:
+            $ref: '#/components/schemas/Detector'
+          type: array
+        neutral_sections:
+          items:
+            $ref: '#/components/schemas/NeutralSection'
           type: array
         operational_points:
+          items:
+            $ref: '#/components/schemas/OperationalPoint'
           type: array
         routes:
+          items:
+            $ref: '#/components/schemas/Route'
           type: array
         signals:
+          items:
+            $ref: '#/components/schemas/Signal'
           type: array
         speed_sections:
+          items:
+            $ref: '#/components/schemas/SpeedSection'
           type: array
         switch_types:
+          items:
+            $ref: '#/components/schemas/SwitchType'
           type: array
         switches:
+          items:
+            $ref: '#/components/schemas/Switch'
           type: array
         track_section_links:
+          items:
+            $ref: '#/components/schemas/TrackSectionLink'
           type: array
         track_sections:
+          items:
+            $ref: '#/components/schemas/TrackSection'
           type: array
         version:
           type: string
-    RailjsonObject:
-      properties:
-        obj_type:
-          $ref: '#/components/schemas/ObjectType'
-        operation_type:
-          enum:
-          - CREATE
-          type: string
-        railjson:
-          $ref: '#/components/schemas/Railjson'
       required:
-      - operation_type
-      - obj_type
-      - railjson
+      - version
+      - operational_points
+      - routes
+      - switch_types
+      - switches
+      - track_section_links
+      - track_sections
+      - speed_sections
+      - neutral_sections
+      - catenaries
+      - signals
+      - buffer_stops
+      - detectors
+      type: object
+    RailjsonObject:
+      oneOf:
+      - properties:
+          obj_type:
+            enum:
+            - TrackSection
+            type: string
+          railjson:
+            $ref: '#/components/schemas/TrackSection'
+        required:
+        - railjson
+        - obj_type
+        type: object
+      - properties:
+          obj_type:
+            enum:
+            - Signal
+            type: string
+          railjson:
+            $ref: '#/components/schemas/Signal'
+        required:
+        - railjson
+        - obj_type
+        type: object
+      - properties:
+          obj_type:
+            enum:
+            - NeutralSection
+            type: string
+          railjson:
+            $ref: '#/components/schemas/NeutralSection'
+        required:
+        - railjson
+        - obj_type
+        type: object
+      - properties:
+          obj_type:
+            enum:
+            - SpeedSection
+            type: string
+          railjson:
+            $ref: '#/components/schemas/SpeedSection'
+        required:
+        - railjson
+        - obj_type
+        type: object
+      - properties:
+          obj_type:
+            enum:
+            - TrackSectionLink
+            type: string
+          railjson:
+            $ref: '#/components/schemas/TrackSectionLink'
+        required:
+        - railjson
+        - obj_type
+        type: object
+      - properties:
+          obj_type:
+            enum:
+            - Switch
+            type: string
+          railjson:
+            $ref: '#/components/schemas/Switch'
+        required:
+        - railjson
+        - obj_type
+        type: object
+      - properties:
+          obj_type:
+            enum:
+            - SwitchType
+            type: string
+          railjson:
+            $ref: '#/components/schemas/SwitchType'
+        required:
+        - railjson
+        - obj_type
+        type: object
+      - properties:
+          obj_type:
+            enum:
+            - Detector
+            type: string
+          railjson:
+            $ref: '#/components/schemas/Detector'
+        required:
+        - railjson
+        - obj_type
+        type: object
+      - properties:
+          obj_type:
+            enum:
+            - BufferStop
+            type: string
+          railjson:
+            $ref: '#/components/schemas/BufferStop'
+        required:
+        - railjson
+        - obj_type
+        type: object
+      - properties:
+          obj_type:
+            enum:
+            - Route
+            type: string
+          railjson:
+            $ref: '#/components/schemas/Route'
+        required:
+        - railjson
+        - obj_type
+        type: object
+      - properties:
+          obj_type:
+            enum:
+            - OperationalPoint
+            type: string
+          railjson:
+            $ref: '#/components/schemas/OperationalPoint'
+        required:
+        - railjson
+        - obj_type
+        type: object
+      - properties:
+          obj_type:
+            enum:
+            - Catenary
+            type: string
+          railjson:
+            $ref: '#/components/schemas/Catenary'
+        required:
+        - railjson
+        - obj_type
+        type: object
     RangeAllowance:
       properties:
         begin_position:
@@ -1114,6 +1879,16 @@ components:
       - begin_position
       - end_position
       - value
+    RefreshResponse:
+      properties:
+        infra_refreshed:
+          items:
+            format: int64
+            type: integer
+          type: array
+      required:
+      - infra_refreshed
+      type: object
     RollingStock:
       allOf:
       - $ref: '#/components/schemas/RollingStockUpsertPayload'
@@ -1377,41 +2152,63 @@ components:
       - rolling_stock_id
       - usage
       type: object
-    RouteTrackRangesCantComputePathError:
-      description: Error when the route path couldn't be computed
+    Route:
       properties:
-        type:
-          enum:
-          - CantComputePath
-          type: string
-      required:
-      - type
-      type: object
-    RouteTrackRangesComputed:
-      description: Route track ranges successfully computed
-      properties:
-        track_ranges:
+        entry_point:
+          $ref: '#/components/schemas/Waypoint'
+        entry_point_direction:
+          $ref: '#/components/schemas/Direction'
+        exit_point:
+          $ref: '#/components/schemas/Waypoint'
+        id:
+          $ref: '#/components/schemas/Identifier'
+        release_detectors:
           items:
-            $ref: '#/components/schemas/DirectionalTrackRange'
+            $ref: '#/components/schemas/Identifier'
           type: array
-        type:
-          enum:
-          - Computed
-          type: string
+        switches_directions:
+          additionalProperties:
+            $ref: '#/components/schemas/Identifier'
+          type: object
       required:
-      - type
-      - track_ranges
+      - id
+      - entry_point
+      - entry_point_direction
+      - exit_point
+      - release_detectors
+      - switches_directions
       type: object
-    RouteTrackRangesNotFoundError:
-      description: Error when the route id couldn't be found
-      properties:
-        type:
-          enum:
-          - NotFound
-          type: string
-      required:
-      - type
-      type: object
+    RouteTrackRangesResult:
+      oneOf:
+      - properties:
+          track_ranges:
+            items:
+              $ref: '#/components/schemas/DirectionalTrackRange'
+            type: array
+          type:
+            enum:
+            - Computed
+            type: string
+        required:
+        - type
+        - track_ranges
+        type: object
+      - properties:
+          type:
+            enum:
+            - NotFound
+            type: string
+        required:
+        - type
+        type: object
+      - properties:
+          type:
+            enum:
+            - CantComputePath
+            type: string
+        required:
+        - type
+        type: object
     ScenarioListResult:
       properties:
         creation_date:
@@ -1708,6 +2505,91 @@ components:
       - infra_id
       - line_code
       - line_name
+    Side:
+      enum:
+      - LEFT
+      - RIGHT
+      - CENTER
+      type: string
+    Signal:
+      properties:
+        direction:
+          $ref: '#/components/schemas/Direction'
+        extensions:
+          $ref: '#/components/schemas/SignalExtensions'
+        id:
+          $ref: '#/components/schemas/Identifier'
+        linked_detector:
+          nullable: true
+          type: string
+        logical_signals:
+          items:
+            $ref: '#/components/schemas/LogicalSignal'
+          type: array
+        position:
+          format: double
+          type: number
+        sight_distance:
+          format: double
+          type: number
+        track:
+          $ref: '#/components/schemas/Identifier'
+      required:
+      - id
+      - track
+      - position
+      - direction
+      - sight_distance
+      type: object
+    SignalExtensions:
+      properties:
+        sncf:
+          allOf:
+          - $ref: '#/components/schemas/SignalSncfExtension'
+          nullable: true
+      type: object
+    SignalSncfExtension:
+      properties:
+        aspects:
+          items:
+            type: string
+          type: array
+        comment:
+          type: string
+        default_aspect:
+          type: string
+        installation_type:
+          type: string
+        is_in_service:
+          type: boolean
+        is_lightable:
+          type: boolean
+        is_operational:
+          type: boolean
+        label:
+          type: string
+        side:
+          $ref: '#/components/schemas/Side'
+        support_type:
+          type: string
+        type_code:
+          type: string
+        value:
+          type: string
+      required:
+      - aspects
+      - comment
+      - default_aspect
+      - installation_type
+      - is_in_service
+      - is_lightable
+      - is_operational
+      - label
+      - side
+      - support_type
+      - type_code
+      - value
+      type: object
     SimulationReport:
       properties:
         base:
@@ -1946,6 +2828,22 @@ components:
       - route_aspects
       - signals
       - mechanical_energy_consumed
+    Slope:
+      properties:
+        begin:
+          format: double
+          type: number
+        end:
+          format: double
+          type: number
+        gradient:
+          format: double
+          type: number
+      required:
+      - gradient
+      - begin
+      - end
+      type: object
     SpaceTimePosition:
       properties:
         position:
@@ -1976,6 +2874,54 @@ components:
       - speeds
       - powers
       type: object
+    SpeedSection:
+      properties:
+        extensions:
+          $ref: '#/components/schemas/SpeedSectionExtensions'
+        id:
+          $ref: '#/components/schemas/Identifier'
+        speed_limit:
+          format: double
+          nullable: true
+          type: number
+        speed_limit_by_tag:
+          additionalProperties:
+            format: double
+            type: number
+          type: object
+        track_ranges:
+          items:
+            $ref: '#/components/schemas/ApplicableDirectionsTrackRange'
+          type: array
+      required:
+      - id
+      - speed_limit_by_tag
+      - track_ranges
+      type: object
+    SpeedSectionExtensions:
+      properties:
+        lpv_sncf:
+          allOf:
+          - $ref: '#/components/schemas/SpeedSectionLpvSncfExtension'
+          nullable: true
+      type: object
+    SpeedSectionLpvSncfExtension:
+      properties:
+        announcement:
+          items:
+            $ref: '#/components/schemas/Panel'
+          type: array
+        r:
+          items:
+            $ref: '#/components/schemas/Panel'
+          type: array
+        z:
+          $ref: '#/components/schemas/Panel'
+      required:
+      - announcement
+      - z
+      - r
+      type: object
     StandardAllowance:
       properties:
         allowance_type:
@@ -2002,6 +2948,13 @@ components:
       - default_value
       - ranges
       - distribution
+    StatePayload:
+      properties:
+        infra:
+          format: int64
+          nullable: true
+          type: integer
+      type: object
     StudyResult:
       properties:
         actual_end_date:
@@ -2129,6 +3082,80 @@ components:
       required:
       - name
       - tags
+    Switch:
+      properties:
+        extensions:
+          $ref: '#/components/schemas/SwitchExtensions'
+        group_change_delay:
+          format: double
+          type: number
+        id:
+          $ref: '#/components/schemas/Identifier'
+        ports:
+          additionalProperties:
+            $ref: '#/components/schemas/TrackEndpoint'
+          type: object
+        switch_type:
+          $ref: '#/components/schemas/Identifier'
+      required:
+      - id
+      - switch_type
+      - group_change_delay
+      - ports
+      type: object
+    SwitchExtensions:
+      properties:
+        sncf:
+          allOf:
+          - $ref: '#/components/schemas/SwitchSncfExtension'
+          nullable: true
+      type: object
+    SwitchPortConnection:
+      properties:
+        dst:
+          type: string
+        src:
+          type: string
+      required:
+      - src
+      - dst
+      type: object
+    SwitchSncfExtension:
+      properties:
+        label:
+          $ref: '#/components/schemas/NonBlankString'
+      required:
+      - label
+      type: object
+    SwitchType:
+      example:
+        groups:
+          LEFT:
+            dst: LEFT
+            src: BASE
+          RIGHT:
+            dst: RIGHT
+            src: BASE
+        id: Point
+        ports:
+        - LEFT
+        - RIGHT
+        - BASE
+      properties:
+        groups:
+          additionalProperties: false
+          type: object
+        id:
+          type: string
+        ports:
+          items:
+            type: string
+          type: array
+      required:
+      - id
+      - ports
+      - groups
+      type: object
     TimetableImportItem:
       properties:
         path:
@@ -2148,11 +3175,34 @@ components:
       - trains
       type: object
     TimetableImportPathLocation:
-      discriminator:
-        propertyName: type
       oneOf:
-      - $ref: '#/components/schemas/TrackOffsetLocation'
-      - $ref: '#/components/schemas/OperationalPointLocation'
+      - properties:
+          offset:
+            format: double
+            type: number
+          track_section:
+            type: string
+          type:
+            enum:
+            - track_offset
+            type: string
+        required:
+        - track_section
+        - offset
+        - type
+        type: object
+      - properties:
+          type:
+            enum:
+            - operational_point
+            type: string
+          uic:
+            format: int64
+            type: integer
+        required:
+        - uic
+        - type
+        type: object
     TimetableImportPathSchedule:
       properties:
         arrival_time:
@@ -2208,18 +3258,15 @@ components:
       - name
       - train_schedule_summaries
       type: object
-    TrackLocation:
-      description: A track location (track section and offset)
+    TrackEndpoint:
       properties:
-        offset:
-          description: The offset on the track section
-          example: 42.0
-          format: float
-          type: number
+        endpoint:
+          $ref: '#/components/schemas/Endpoint'
         track:
-          description: The track section ID
-          example: 61205924-6667-11e3-81ff-01f464e0362d
-          type: string
+          $ref: '#/components/schemas/Identifier'
+      required:
+      - endpoint
+      - track
       type: object
     TrackOffsetLocation:
       properties:
@@ -2251,6 +3298,59 @@ components:
           example: 01234567-89ab-cdef-0123-456789abcdef
           type: string
       type: object
+    TrackSection:
+      properties:
+        curves:
+          items:
+            $ref: '#/components/schemas/Curve'
+          type: array
+        extensions:
+          $ref: '#/components/schemas/TrackSectionExtensions'
+        geo:
+          $ref: '#/components/schemas/GeometryValue'
+        id:
+          $ref: '#/components/schemas/Identifier'
+        length:
+          format: double
+          type: number
+        loading_gauge_limits:
+          items:
+            $ref: '#/components/schemas/LoadingGaugeLimit'
+          type: array
+        sch:
+          $ref: '#/components/schemas/GeometryValue'
+        slopes:
+          items:
+            $ref: '#/components/schemas/Slope'
+          type: array
+      required:
+      - id
+      - length
+      - slopes
+      - curves
+      - geo
+      - sch
+      type: object
+    TrackSectionExtensions:
+      properties:
+        sncf:
+          allOf:
+          - $ref: '#/components/schemas/TrackSectionSncfExtension'
+          nullable: true
+      type: object
+    TrackSectionLink:
+      properties:
+        dst:
+          $ref: '#/components/schemas/TrackEndpoint'
+        id:
+          $ref: '#/components/schemas/Identifier'
+        src:
+          $ref: '#/components/schemas/TrackEndpoint'
+      required:
+      - id
+      - src
+      - dst
+      type: object
     TrackSectionLocation:
       description: A track location (track section and offset)
       properties:
@@ -2266,6 +3366,24 @@ components:
       required:
       - track_section
       - offset
+      type: object
+    TrackSectionSncfExtension:
+      properties:
+        line_code:
+          format: int32
+          type: integer
+        line_name:
+          $ref: '#/components/schemas/NonBlankString'
+        track_name:
+          $ref: '#/components/schemas/NonBlankString'
+        track_number:
+          format: int32
+          type: integer
+      required:
+      - line_code
+      - line_name
+      - track_number
+      - track_name
       type: object
     TrainSchedule:
       properties:
@@ -2502,20 +3620,17 @@ components:
     UpdateOperation:
       properties:
         obj_id:
-          example: bd840b06-84ba-4566-98c1-ccf0196c5f16
           type: string
         obj_type:
           $ref: '#/components/schemas/ObjectType'
-        operation_type:
-          enum:
-          - UPDATE
-          type: string
         railjson_patch:
-          $ref: '#/components/schemas/Patches'
+          description: The partial Railjson object patch to apply
+          type: object
       required:
-      - operation_type
+      - obj_id
       - obj_type
       - railjson_patch
+      type: object
     Version:
       properties:
         git_describe:
@@ -2552,25 +3667,44 @@ components:
           example: vector
           type: string
     Waypoint:
-      items:
-        properties:
-          geo_coordinate:
-            items:
-              format: float
-              type: number
-            maxItems: 2
-            minItems: 2
-            type: array
-          track_section:
+      oneOf:
+      - properties:
+          id:
+            $ref: '#/components/schemas/Identifier'
+          type:
+            enum:
+            - BufferStop
             type: string
+        required:
+        - id
+        - type
         type: object
-      type: array
+      - properties:
+          id:
+            $ref: '#/components/schemas/Identifier'
+          type:
+            enum:
+            - Detector
+            type: string
+        required:
+        - id
+        - type
+        type: object
+    WaypointType:
+      enum:
+      - Detector
+      - BufferStop
+      type: string
     Zone:
+      description: Geographic and Schematic bounding boxes of a zone impacted by a list of operations
       properties:
         geo:
           $ref: '#/components/schemas/BoundingBox'
         sch:
           $ref: '#/components/schemas/BoundingBox'
+      required:
+      - geo
+      - sch
       type: object
 info:
   description: OSRD Edition service description
@@ -2725,731 +3859,6 @@ paths:
               schema:
                 type: string
           description: Check if Editoast is running correctly
-  /infra/:
-    get:
-      parameters:
-      - description: Page number
-        in: query
-        name: page
-        schema:
-          default: 1
-          minimum: 1
-          type: integer
-      - description: Number of elements by page
-        in: query
-        name: page_size
-        schema:
-          default: 25
-          maximum: 10000
-          minimum: 1
-          type: integer
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                properties:
-                  count:
-                    type: number
-                  next: {}
-                  previous: {}
-                  results:
-                    items:
-                      $ref: '#/components/schemas/Infra'
-                    type: array
-                required:
-                - count
-                - next
-                - previous
-                type: object
-          description: The infras list
-      summary: Paginated list of all available infras
-      tags:
-      - infra
-    post:
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                name:
-                  type: string
-              type: object
-        description: Name of the infra to create
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Infra'
-          description: The created infra
-      summary: Create an infra
-      tags:
-      - infra
-  /infra/railjson/:
-    post:
-      parameters:
-      - description: Infra name
-        in: query
-        name: name
-        required: true
-        schema:
-          type: string
-      - in: query
-        name: generate_data
-        schema:
-          default: false
-          description: whether the layer should be generated or no
-          type: boolean
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RailjsonFile'
-        description: Railjson infra
-        required: true
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                properties:
-                  id:
-                    type: string
-                type: object
-          description: The imported infra id
-      summary: Import an infra from railjson
-      tags:
-      - infra
-  /infra/refresh/:
-    post:
-      parameters:
-      - description: A list of infra ID
-        in: query
-        name: infras
-        schema:
-          default: []
-          items:
-            type: integer
-          type: array
-      - description: Force the refresh of the layers
-        in: query
-        name: force
-        schema:
-          default: false
-          type: boolean
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                items:
-                  type: integer
-                type: array
-          description: A list thats contains the ID of the infras that were refreshed*
-      summary: Refresh the layers
-      tags:
-      - infra
-  /infra/{id}/:
-    delete:
-      parameters:
-      - description: infra id
-        in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-      responses:
-        '204':
-          description: No content
-      summary: Delete an infra and all entities linked to it
-      tags:
-      - infra
-    get:
-      parameters:
-      - description: infra id
-        in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Infra'
-          description: Information about the retrieved infra
-      summary: Retrieve a specific infra
-      tags:
-      - infra
-    post:
-      parameters:
-      - description: infra id
-        in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-      requestBody:
-        content:
-          application/json:
-            schema:
-              items:
-                $ref: '#/components/schemas/Operation'
-              type: array
-        description: Operations to do on the infra
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/OperationResult'
-                type: array
-          description: An array containing infos about the operations processed
-      summary: Update/Create/Delete an object of the infra
-      tags:
-      - infra
-    put:
-      parameters:
-      - description: infra id
-        in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                name:
-                  type: string
-              type: object
-        description: the name we want to give to the infra
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Infra'
-          description: The updated infra
-      summary: Update an infrastructure name
-      tags:
-      - infra
-  /infra/{id}/attached/{track_id}/:
-    get:
-      parameters:
-      - description: Infra ID
-        in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-      - description: Track ID
-        in: path
-        name: track_id
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                additionalProperties:
-                  items:
-                    description: Object IDs
-                    type: string
-                  type: array
-                example:
-                  BufferStop: []
-                  Detector:
-                  - detector.0
-                  Switch:
-                  - switch.0
-                  - switch.1
-                type: object
-          description: All objects attached to the given track (arranged by types)
-      summary: Retrieve all objects attached to a given track
-      tags:
-      - infra
-  /infra/{id}/clone/:
-    post:
-      parameters:
-      - description: Infra id
-        in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-      - description: New infra name
-        in: query
-        name: name
-        required: true
-        schema:
-          type: string
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                properties:
-                  id:
-                    type: integer
-                type: object
-          description: The duplicated infra id
-      summary: Duplicate an infra
-      tags:
-      - infra
-  /infra/{id}/errors/:
-    get:
-      parameters:
-      - description: infra id
-        in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-      - description: The page number
-        in: query
-        name: page
-        schema:
-          default: 1
-          type: integer
-      - description: The number of item per page
-        in: query
-        name: page_size
-        schema:
-          default: 25
-          minimum: 10
-          type: integer
-      - description: The type of error to filter on
-        in: query
-        name: error_type
-        schema:
-          $ref: '#/components/schemas/InfraErrorType'
-      - description: errors and warnings that only part of a given object
-        in: query
-        name: object_id
-        schema:
-          type: string
-      - description: Whether the response should include errors or warnings
-        in: query
-        name: level
-        schema:
-          default: all
-          enum:
-          - errors
-          - warnings
-          - all
-          type: string
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                properties:
-                  count:
-                    description: Total number of elements
-                    example: 1
-                    type: integer
-                  next:
-                    description: The index of the following page (null if no more pages available)
-                    example: null
-                    nullable: true
-                    type: integer
-                  previous:
-                    description: The index of the previous page (null if requesting the first page)
-                    example: null
-                    nullable: true
-                    type: integer
-                  results:
-                    items:
-                      $ref: '#/components/schemas/InfraError'
-                    type: array
-                type: object
-          description: A paginated list of errors
-      summary: Retrieve a paginated list of errors
-      tags:
-      - infra
-  /infra/{id}/lines/{line_code}/bbox/:
-    get:
-      parameters:
-      - description: infra id
-        in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-      - description: a line code
-        in: path
-        name: line_code
-        required: true
-        schema:
-          type: integer
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Zone'
-          description: The BBox of the line
-      summary: Returns the BBoxes (geo and schematic) of a line
-      tags:
-      - infra
-  /infra/{id}/load/:
-    post:
-      parameters:
-      - description: infra id
-        in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-      responses:
-        '200':
-          description: No content
-      summary: Load an infra if not loaded
-      tags:
-      - infra
-  /infra/{id}/lock/:
-    post:
-      parameters:
-      - description: infra id
-        in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-      responses:
-        '204':
-          description: No content
-      summary: Lock an infra from edition
-      tags:
-      - infra
-  /infra/{id}/objects/{object_type}/:
-    post:
-      parameters:
-      - description: Infra id
-        in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-      - description: The type of the object
-        in: path
-        name: object_type
-        required: true
-        schema:
-          $ref: '#/components/schemas/ObjectType'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              items:
-                type: string
-              type: array
-        description: List of object id's
-        required: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                items:
-                  properties:
-                    geographic:
-                      $ref: '#/components/schemas/Geometry'
-                      description: object's geographic in geojson format
-                    railjson:
-                      $ref: '#/components/schemas/Railjson'
-                      description: Object properties in railjson format
-                    schematic:
-                      $ref: '#/components/schemas/Geometry'
-                      description: object's schematic in geojson format
-                  required:
-                  - railjson
-                  - geographic
-                  - schematic
-                  type: object
-                type: array
-          description: No content
-      summary: Retrieve a list of specific objects in railjson format
-      tags:
-      - infra
-  /infra/{id}/pathfinding/:
-    post:
-      parameters:
-      - description: Infra ID
-        in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-      - description: Maximum number of paths to return
-        in: query
-        name: number
-        schema:
-          default: 5
-          format: integer
-          maximum: 5
-          minimum: 1
-          type: number
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                ending:
-                  $ref: '#/components/schemas/TrackLocation'
-                starting:
-                  allOf:
-                  - $ref: '#/components/schemas/TrackLocation'
-                  - properties:
-                      direction:
-                        $ref: '#/components/schemas/Direction'
-                    type: object
-              type: object
-        description: Starting and ending track location
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                items:
-                  properties:
-                    detectors:
-                      items:
-                        example: detector1
-                        type: string
-                      type: array
-                    switches_directions:
-                      additionalProperties:
-                        type: string
-                      example:
-                        switch1: left
-                        switch2: right
-                      type: object
-                    track_ranges:
-                      items:
-                        $ref: '#/components/schemas/DirectionalTrackRange'
-                      minItems: 1
-                      type: array
-                  type: object
-                type: array
-          description: Paths, containing track ranges, detectors and switches with their directions. If no path is found, an empty list is returned.
-      summary: Compute paths given starting and ending track location. Return shortest paths.
-      tags:
-      - infra
-      - pathfinding
-  /infra/{id}/railjson/:
-    get:
-      parameters:
-      - description: Infra ID
-        in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RailjsonFile'
-          description: The infra in railjson format
-      summary: Serialize an infra to railjson
-      tags:
-      - infra
-  /infra/{id}/routes/track_ranges/:
-    get:
-      parameters:
-      - description: Infra ID
-        in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-      - in: query
-        name: routes
-        required: true
-        schema:
-          description: A list of routes seperated by comma
-          example: route1,route2,route3
-          type: string
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                items:
-                  oneOf:
-                  - $ref: '#/components/schemas/RouteTrackRangesNotFoundError'
-                  - $ref: '#/components/schemas/RouteTrackRangesCantComputePathError'
-                  - $ref: '#/components/schemas/RouteTrackRangesComputed'
-                type: array
-          description: Foreach route, the track ranges through which it passes or an error
-      summary: Compute the track ranges through which routes passes.
-      tags:
-      - infra
-      - routes
-  /infra/{id}/routes/{waypoint_type}/{waypoint_id}/:
-    get:
-      parameters:
-      - description: Infra ID
-        in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-      - description: Type of the waypoint
-        in: path
-        name: waypoint_type
-        required: true
-        schema:
-          enum:
-          - Detector
-          - BufferStop
-          type: string
-      - description: The waypoint id
-        in: path
-        name: waypoint_id
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                properties:
-                  ending:
-                    example:
-                    - route3
-                    - route4
-                    items:
-                      type: string
-                    type: array
-                  starting:
-                    example:
-                    - route1
-                    - route2
-                    items:
-                      type: string
-                    type: array
-                type: object
-          description: All routes that starting and ending by the given waypoint
-      summary: Retrieve all routes that starting and ending by the given waypoint (detector or buffer stop)
-      tags:
-      - infra
-      - routes
-  /infra/{id}/speed_limit_tags/:
-    get:
-      parameters:
-      - description: Infra id
-        in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                example:
-                - freight
-                - heavy_load
-                items:
-                  type: string
-                type: array
-          description: Tags list
-      summary: List all speed limit tags
-      tags:
-      - infra
-  /infra/{id}/switch_types/:
-    get:
-      parameters:
-      - description: infra id
-        in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                items:
-                  description: A switch type following Railjson spec
-                  example:
-                    groups:
-                      LEFT:
-                        dst: LEFT
-                        src: BASE
-                      RIGHT:
-                        dst: RIGHT
-                        src: BASE
-                    id: Point
-                    ports:
-                    - LEFT
-                    - RIGHT
-                    - BASE
-                  type: object
-                type: array
-          description: A list of switch types
-      summary: Retrieve a list of switch types
-      tags:
-      - infra
-  /infra/{id}/unlock/:
-    post:
-      parameters:
-      - description: infra id
-        in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-      responses:
-        '204':
-          description: No content
-      summary: Unlock an infra from edition
-      tags:
-      - infra
-  /infra/{id}/voltages/:
-    get:
-      parameters:
-      - description: Infra ID
-        in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-      - description: include rolling stocks modes or not
-        in: query
-        name: include_rolling_stock_modes
-        required: false
-        schema:
-          type: boolean
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                example:
-                - '750'
-                - '1500'
-                - '2500.5'
-                items:
-                  type: string
-                type: array
-          description: Voltages list
-      summary: List all voltages
-      tags:
-      - infra
   /layers/layer/{layer_slug}/mvt/{view_slug}/:
     get:
       parameters:
@@ -4483,12 +4892,15 @@ paths:
       - stdcm
   /timetable/{id}/:
     get:
+      description: Return a specific timetable with its associated schedules
       parameters:
-      - description: Timetable ID
+      - description: Timetable id
         in: path
         name: id
         required: true
         schema:
+          format: int64
+          minimum: 0
           type: integer
       responses:
         '200':
@@ -4496,8 +4908,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TimetableWithSchedulesDetails'
-          description: The timetable content
-      summary: Retrieve a timetable and its train schedules
+          description: Timetable with schedules
+        '404':
+          description: Timetable not found
+      summary: Return a specific timetable with its associated schedules
       tags:
       - timetable
     post:
@@ -4528,12 +4942,17 @@ paths:
       - timetable
   /timetable/{id}/conflicts/:
     get:
+      description: |-
+        Compute spacing conflicts for a given timetable
+        TODO: This should compute itinary conflicts too
       parameters:
-      - description: Timetable ID
+      - description: Timetable id
         in: path
         name: id
         required: true
         schema:
+          format: int64
+          minimum: 0
           type: integer
       responses:
         '200':
@@ -4541,31 +4960,10 @@ paths:
             application/json:
               schema:
                 items:
-                  properties:
-                    conflict_type:
-                      type: string
-                    end_time:
-                      type: string
-                    start_time:
-                      type: string
-                    train_ids:
-                      items:
-                        type: number
-                      type: array
-                    train_names:
-                      items:
-                        type: string
-                      type: array
-                  required:
-                  - train_ids
-                  - train_names
-                  - start_time
-                  - end_time
-                  - conflict_type
-                  type: object
+                  $ref: '#/components/schemas/Conflict'
                 type: array
-          description: The timetable conflicts content
-      summary: Retrieve all conflicts for a specific timetable
+          description: Spacing conflicts
+      summary: Compute spacing conflicts for a given timetable
       tags:
       - timetable
   /train_schedule/:
@@ -4744,13 +5142,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  git_describe:
-                    nullable: true
-                    type: string
-                required:
-                - git_describe
-                type: object
+                $ref: '#/components/schemas/Version'
           description: Return the core service version
 tags:
 - description: Infra

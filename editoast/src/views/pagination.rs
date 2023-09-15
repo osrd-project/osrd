@@ -1,4 +1,7 @@
 use crate::error::Result;
+use crate::schema::InfraError;
+use crate::schemas;
+use crate::views::infra::InfraWithState;
 use diesel::pg::Pg;
 use diesel::query_builder::*;
 use diesel::sql_types::BigInt;
@@ -9,8 +12,35 @@ use diesel_async::{AsyncPgConnection as PgConnection, RunQueryDsl};
 use serde::Deserialize;
 use serde::Serialize;
 use thiserror::Error;
+use utoipa::{IntoParams, ToSchema};
 
 use editoast_derive::EditoastError;
+
+schemas! {
+    PaginatedInfras,
+    PaginatedInfraWithState,
+    PaginatedInfraErrors,
+}
+
+macro_rules! decl_paginated_response {
+    ($name:ident, $item:ty) => {
+        /// A paginated response
+        #[derive(ToSchema)]
+        pub struct $name {
+            /// The total number of items
+            pub count: i64,
+            /// The previous page number
+            #[schema(required)]
+            pub previous: Option<i64>,
+            /// The next page number
+            #[schema(required)]
+            pub next: Option<i64>,
+            /// The list of results
+            #[schema(required)]
+            pub results: Vec<$item>,
+        }
+    };
+}
 
 /// A paginated response
 #[derive(Debug, Serialize)]
@@ -21,10 +51,20 @@ pub struct PaginatedResponse<T> {
     pub results: Vec<T>,
 }
 
-#[derive(Debug, Clone, Copy, Deserialize)]
+// HACK: We need to specialize manually PaginatedResponse with each
+// type we intend to use it with, otherwise utoipa will generate a $ref to T...
+decl_paginated_response!(PaginatedInfras, InfraWithState);
+decl_paginated_response!(PaginatedInfraWithState, InfraWithState);
+decl_paginated_response!(PaginatedInfraErrors, InfraError);
+
+#[derive(Debug, Clone, Copy, Deserialize, IntoParams)]
 pub struct PaginationQueryParam {
+    /// Page number
     #[serde(default = "default_page")]
+    #[param(minimum = 1, default = 1)]
     pub page: i64,
+    /// Number of elements by page
+    #[param(minimum = 1, maximum = 10000, default = 25)]
     pub page_size: Option<i64>,
 }
 

@@ -3,11 +3,10 @@ import { baseEditoastApi as api } from './emptyApi';
 export const addTagTypes = [
   'documents',
   'electrical_profiles',
-  'infra',
-  'pathfinding',
-  'routes',
   'layers',
   'rolling_stock',
+  'pathfinding',
+  'infra',
   'projects',
   'studies',
   'scenarios',
@@ -71,181 +70,6 @@ const injectedRtkApi = api
       }),
       getHealth: build.query<GetHealthApiResponse, GetHealthApiArg>({
         query: () => ({ url: `/health/` }),
-      }),
-      getInfra: build.query<GetInfraApiResponse, GetInfraApiArg>({
-        query: (queryArg) => ({
-          url: `/infra/`,
-          params: { page: queryArg.page, page_size: queryArg.pageSize },
-        }),
-        providesTags: ['infra'],
-      }),
-      postInfra: build.mutation<PostInfraApiResponse, PostInfraApiArg>({
-        query: (queryArg) => ({ url: `/infra/`, method: 'POST', body: queryArg.body }),
-        invalidatesTags: ['infra'],
-      }),
-      postInfraRailjson: build.mutation<PostInfraRailjsonApiResponse, PostInfraRailjsonApiArg>({
-        query: (queryArg) => ({
-          url: `/infra/railjson/`,
-          method: 'POST',
-          body: queryArg.railjsonFile,
-          params: { name: queryArg.name, generate_data: queryArg.generateData },
-        }),
-        invalidatesTags: ['infra'],
-      }),
-      postInfraRefresh: build.mutation<PostInfraRefreshApiResponse, PostInfraRefreshApiArg>({
-        query: (queryArg) => ({
-          url: `/infra/refresh/`,
-          method: 'POST',
-          params: { infras: queryArg.infras, force: queryArg.force },
-        }),
-        invalidatesTags: ['infra'],
-      }),
-      deleteInfraById: build.mutation<DeleteInfraByIdApiResponse, DeleteInfraByIdApiArg>({
-        query: (queryArg) => ({ url: `/infra/${queryArg.id}/`, method: 'DELETE' }),
-        invalidatesTags: ['infra'],
-      }),
-      getInfraById: build.query<GetInfraByIdApiResponse, GetInfraByIdApiArg>({
-        query: (queryArg) => ({ url: `/infra/${queryArg.id}/` }),
-        providesTags: ['infra'],
-      }),
-      postInfraById: build.mutation<PostInfraByIdApiResponse, PostInfraByIdApiArg>({
-        query: (queryArg) => ({
-          url: `/infra/${queryArg.id}/`,
-          method: 'POST',
-          body: queryArg.body,
-        }),
-        invalidatesTags: ['infra'],
-      }),
-      putInfraById: build.mutation<PutInfraByIdApiResponse, PutInfraByIdApiArg>({
-        query: (queryArg) => ({
-          url: `/infra/${queryArg.id}/`,
-          method: 'PUT',
-          body: queryArg.body,
-        }),
-        invalidatesTags: ['infra'],
-      }),
-      getInfraByIdAttachedAndTrackId: build.query<
-        GetInfraByIdAttachedAndTrackIdApiResponse,
-        GetInfraByIdAttachedAndTrackIdApiArg
-      >({
-        query: (queryArg) => ({ url: `/infra/${queryArg.id}/attached/${queryArg.trackId}/` }),
-        providesTags: ['infra'],
-      }),
-      postInfraByIdClone: build.mutation<PostInfraByIdCloneApiResponse, PostInfraByIdCloneApiArg>({
-        query: (queryArg) => ({
-          url: `/infra/${queryArg.id}/clone/`,
-          method: 'POST',
-          params: { name: queryArg.name },
-        }),
-        invalidatesTags: ['infra'],
-      }),
-      getInfraByIdErrors: build.query<GetInfraByIdErrorsApiResponse, GetInfraByIdErrorsApiArg>({
-        query: (queryArg) => ({
-          url: `/infra/${queryArg.id}/errors/`,
-          params: {
-            page: queryArg.page,
-            page_size: queryArg.pageSize,
-            error_type: queryArg.errorType,
-            object_id: queryArg.objectId,
-            level: queryArg.level,
-          },
-        }),
-        providesTags: ['infra'],
-      }),
-      getInfraByIdLinesAndLineCodeBbox: build.query<
-        GetInfraByIdLinesAndLineCodeBboxApiResponse,
-        GetInfraByIdLinesAndLineCodeBboxApiArg
-      >({
-        query: (queryArg) => ({ url: `/infra/${queryArg.id}/lines/${queryArg.lineCode}/bbox/` }),
-        providesTags: ['infra'],
-      }),
-      postInfraByIdLoad: build.mutation<PostInfraByIdLoadApiResponse, PostInfraByIdLoadApiArg>({
-        query: (queryArg) => ({ url: `/infra/${queryArg.id}/load/`, method: 'POST' }),
-        invalidatesTags: ['infra'],
-      }),
-      postInfraByIdLock: build.mutation<PostInfraByIdLockApiResponse, PostInfraByIdLockApiArg>({
-        query: (queryArg) => ({ url: `/infra/${queryArg.id}/lock/`, method: 'POST' }),
-        invalidatesTags: ['infra'],
-      }),
-      postInfraByIdObjectsAndObjectType: build.mutation<
-        PostInfraByIdObjectsAndObjectTypeApiResponse,
-        PostInfraByIdObjectsAndObjectTypeApiArg
-      >({
-        query: (queryArg) => ({
-          url: `/infra/${queryArg.id}/objects/${queryArg.objectType}/`,
-          method: 'POST',
-          body: queryArg.body,
-        }),
-        invalidatesTags: ['infra'],
-      }),
-      postInfraByIdPathfinding: build.mutation<
-        PostInfraByIdPathfindingApiResponse,
-        PostInfraByIdPathfindingApiArg
-      >({
-        query: (queryArg) => ({
-          url: `/infra/${queryArg.id}/pathfinding/`,
-          method: 'POST',
-          body: queryArg.body,
-          params: { number: queryArg.number },
-        }),
-        invalidatesTags: ['infra', 'pathfinding'],
-      }),
-      getInfraByIdRailjson: build.query<
-        GetInfraByIdRailjsonApiResponse,
-        GetInfraByIdRailjsonApiArg
-      >({
-        query: (queryArg) => ({ url: `/infra/${queryArg.id}/railjson/` }),
-        providesTags: ['infra'],
-      }),
-      getInfraByIdRoutesTrackRanges: build.query<
-        GetInfraByIdRoutesTrackRangesApiResponse,
-        GetInfraByIdRoutesTrackRangesApiArg
-      >({
-        query: (queryArg) => ({
-          url: `/infra/${queryArg.id}/routes/track_ranges/`,
-          params: { routes: queryArg.routes },
-        }),
-        providesTags: ['infra', 'routes'],
-      }),
-      getInfraByIdRoutesAndWaypointTypeWaypointId: build.query<
-        GetInfraByIdRoutesAndWaypointTypeWaypointIdApiResponse,
-        GetInfraByIdRoutesAndWaypointTypeWaypointIdApiArg
-      >({
-        query: (queryArg) => ({
-          url: `/infra/${queryArg.id}/routes/${queryArg.waypointType}/${queryArg.waypointId}/`,
-        }),
-        providesTags: ['infra', 'routes'],
-      }),
-      getInfraByIdSpeedLimitTags: build.query<
-        GetInfraByIdSpeedLimitTagsApiResponse,
-        GetInfraByIdSpeedLimitTagsApiArg
-      >({
-        query: (queryArg) => ({ url: `/infra/${queryArg.id}/speed_limit_tags/` }),
-        providesTags: ['infra'],
-      }),
-      getInfraByIdSwitchTypes: build.query<
-        GetInfraByIdSwitchTypesApiResponse,
-        GetInfraByIdSwitchTypesApiArg
-      >({
-        query: (queryArg) => ({ url: `/infra/${queryArg.id}/switch_types/` }),
-        providesTags: ['infra'],
-      }),
-      postInfraByIdUnlock: build.mutation<
-        PostInfraByIdUnlockApiResponse,
-        PostInfraByIdUnlockApiArg
-      >({
-        query: (queryArg) => ({ url: `/infra/${queryArg.id}/unlock/`, method: 'POST' }),
-        invalidatesTags: ['infra'],
-      }),
-      getInfraByIdVoltages: build.query<
-        GetInfraByIdVoltagesApiResponse,
-        GetInfraByIdVoltagesApiArg
-      >({
-        query: (queryArg) => ({
-          url: `/infra/${queryArg.id}/voltages/`,
-          params: { include_rolling_stock_modes: queryArg.includeRollingStockModes },
-        }),
-        providesTags: ['infra'],
       }),
       getLayersLayerByLayerSlugMvtAndViewSlug: build.query<
         GetLayersLayerByLayerSlugMvtAndViewSlugApiResponse,
@@ -668,213 +492,6 @@ export type GetElectricalProfileSetByIdLevelOrderApiArg = {
 };
 export type GetHealthApiResponse = unknown;
 export type GetHealthApiArg = void;
-export type GetInfraApiResponse = /** status 200 The infras list */ {
-  count: number;
-  next: any;
-  previous: any;
-  results?: Infra[];
-};
-export type GetInfraApiArg = {
-  /** Page number */
-  page?: number;
-  /** Number of elements by page */
-  pageSize?: number;
-};
-export type PostInfraApiResponse = /** status 201 The created infra */ Infra;
-export type PostInfraApiArg = {
-  /** Name of the infra to create */
-  body: {
-    name?: string;
-  };
-};
-export type PostInfraRailjsonApiResponse = /** status 201 The imported infra id */ {
-  id?: string;
-};
-export type PostInfraRailjsonApiArg = {
-  /** Infra name */
-  name: string;
-  generateData?: boolean;
-  /** Railjson infra */
-  railjsonFile: RailjsonFile;
-};
-export type PostInfraRefreshApiResponse =
-  /** status 200 A list thats contains the ID of the infras that were refreshed* */ number[];
-export type PostInfraRefreshApiArg = {
-  /** A list of infra ID */
-  infras?: number[];
-  /** Force the refresh of the layers */
-  force?: boolean;
-};
-export type DeleteInfraByIdApiResponse = unknown;
-export type DeleteInfraByIdApiArg = {
-  /** infra id */
-  id: number;
-};
-export type GetInfraByIdApiResponse = /** status 200 Information about the retrieved infra */ Infra;
-export type GetInfraByIdApiArg = {
-  /** infra id */
-  id: number;
-};
-export type PostInfraByIdApiResponse =
-  /** status 200 An array containing infos about the operations processed */ OperationResult[];
-export type PostInfraByIdApiArg = {
-  /** infra id */
-  id: number;
-  /** Operations to do on the infra */
-  body: Operation[];
-};
-export type PutInfraByIdApiResponse = /** status 200 The updated infra */ Infra;
-export type PutInfraByIdApiArg = {
-  /** infra id */
-  id: number;
-  /** the name we want to give to the infra */
-  body: {
-    name?: string;
-  };
-};
-export type GetInfraByIdAttachedAndTrackIdApiResponse =
-  /** status 200 All objects attached to the given track (arranged by types) */ {
-    [key: string]: string[];
-  };
-export type GetInfraByIdAttachedAndTrackIdApiArg = {
-  /** Infra ID */
-  id: number;
-  /** Track ID */
-  trackId: string;
-};
-export type PostInfraByIdCloneApiResponse = /** status 201 The duplicated infra id */ {
-  id?: number;
-};
-export type PostInfraByIdCloneApiArg = {
-  /** Infra id */
-  id: number;
-  /** New infra name */
-  name: string;
-};
-export type GetInfraByIdErrorsApiResponse = /** status 200 A paginated list of errors */ {
-  count?: number;
-  next?: number | null;
-  previous?: number | null;
-  results?: InfraError[];
-};
-export type GetInfraByIdErrorsApiArg = {
-  /** infra id */
-  id: number;
-  /** The page number */
-  page?: number;
-  /** The number of item per page */
-  pageSize?: number;
-  /** The type of error to filter on */
-  errorType?: InfraErrorType;
-  /** errors and warnings that only part of a given object */
-  objectId?: string;
-  /** Whether the response should include errors or warnings */
-  level?: 'errors' | 'warnings' | 'all';
-};
-export type GetInfraByIdLinesAndLineCodeBboxApiResponse =
-  /** status 200 The BBox of the line */ Zone;
-export type GetInfraByIdLinesAndLineCodeBboxApiArg = {
-  /** infra id */
-  id: number;
-  /** a line code */
-  lineCode: number;
-};
-export type PostInfraByIdLoadApiResponse = unknown;
-export type PostInfraByIdLoadApiArg = {
-  /** infra id */
-  id: number;
-};
-export type PostInfraByIdLockApiResponse = unknown;
-export type PostInfraByIdLockApiArg = {
-  /** infra id */
-  id: number;
-};
-export type PostInfraByIdObjectsAndObjectTypeApiResponse = /** status 200 No content */ {
-  geographic: Geometry;
-  railjson: Railjson;
-  schematic: Geometry;
-}[];
-export type PostInfraByIdObjectsAndObjectTypeApiArg = {
-  /** Infra id */
-  id: number;
-  /** The type of the object */
-  objectType: ObjectType;
-  /** List of object id's */
-  body: string[];
-};
-export type PostInfraByIdPathfindingApiResponse =
-  /** status 200 Paths, containing track ranges, detectors and switches with their directions. If no path is found, an empty list is returned. */ {
-    detectors?: string[];
-    switches_directions?: {
-      [key: string]: string;
-    };
-    track_ranges?: DirectionalTrackRange[];
-  }[];
-export type PostInfraByIdPathfindingApiArg = {
-  /** Infra ID */
-  id: number;
-  /** Maximum number of paths to return */
-  number?: number;
-  /** Starting and ending track location */
-  body: {
-    ending?: TrackLocation;
-    starting?: TrackLocation & {
-      direction?: Direction;
-    };
-  };
-};
-export type GetInfraByIdRailjsonApiResponse =
-  /** status 200 The infra in railjson format */ RailjsonFile;
-export type GetInfraByIdRailjsonApiArg = {
-  /** Infra ID */
-  id: number;
-};
-export type GetInfraByIdRoutesTrackRangesApiResponse =
-  /** status 200 Foreach route, the track ranges through which it passes or an error */ (
-    | RouteTrackRangesNotFoundError
-    | RouteTrackRangesCantComputePathError
-    | RouteTrackRangesComputed
-  )[];
-export type GetInfraByIdRoutesTrackRangesApiArg = {
-  /** Infra ID */
-  id: number;
-  routes: string;
-};
-export type GetInfraByIdRoutesAndWaypointTypeWaypointIdApiResponse =
-  /** status 200 All routes that starting and ending by the given waypoint */ {
-    ending?: string[];
-    starting?: string[];
-  };
-export type GetInfraByIdRoutesAndWaypointTypeWaypointIdApiArg = {
-  /** Infra ID */
-  id: number;
-  /** Type of the waypoint */
-  waypointType: 'Detector' | 'BufferStop';
-  /** The waypoint id */
-  waypointId: string;
-};
-export type GetInfraByIdSpeedLimitTagsApiResponse = /** status 200 Tags list */ string[];
-export type GetInfraByIdSpeedLimitTagsApiArg = {
-  /** Infra id */
-  id: number;
-};
-export type GetInfraByIdSwitchTypesApiResponse = /** status 200 A list of switch types */ object[];
-export type GetInfraByIdSwitchTypesApiArg = {
-  /** infra id */
-  id: number;
-};
-export type PostInfraByIdUnlockApiResponse = unknown;
-export type PostInfraByIdUnlockApiArg = {
-  /** infra id */
-  id: number;
-};
-export type GetInfraByIdVoltagesApiResponse = /** status 200 Voltages list */ string[];
-export type GetInfraByIdVoltagesApiArg = {
-  /** Infra ID */
-  id: number;
-  /** include rolling stocks modes or not */
-  includeRollingStockModes?: boolean;
-};
 export type GetLayersLayerByLayerSlugMvtAndViewSlugApiResponse =
   /** status 200 Successful Response */ ViewMetadata;
 export type GetLayersLayerByLayerSlugMvtAndViewSlugApiArg = {
@@ -1203,9 +820,9 @@ export type PostStdcmApiArg = {
   };
 };
 export type GetTimetableByIdApiResponse =
-  /** status 200 The timetable content */ TimetableWithSchedulesDetails;
+  /** status 200 Timetable with schedules */ TimetableWithSchedulesDetails;
 export type GetTimetableByIdApiArg = {
-  /** Timetable ID */
+  /** Timetable id */
   id: number;
 };
 export type PostTimetableByIdApiResponse = unknown;
@@ -1214,16 +831,9 @@ export type PostTimetableByIdApiArg = {
   id: number;
   body: TimetableImportItem[];
 };
-export type GetTimetableByIdConflictsApiResponse =
-  /** status 200 The timetable conflicts content */ {
-    conflict_type: string;
-    end_time: string;
-    start_time: string;
-    train_ids: number[];
-    train_names: string[];
-  }[];
+export type GetTimetableByIdConflictsApiResponse = /** status 200 Spacing conflicts */ Conflict[];
 export type GetTimetableByIdConflictsApiArg = {
-  /** Timetable ID */
+  /** Timetable id */
   id: number;
 };
 export type DeleteTrainScheduleApiResponse = unknown;
@@ -1276,9 +886,7 @@ export type GetTrainScheduleByIdResultApiArg = {
 };
 export type GetVersionApiResponse = /** status 200 Return the service version */ Version;
 export type GetVersionApiArg = void;
-export type GetVersionCoreApiResponse = /** status 200 Return the core service version */ {
-  git_describe: string | null;
-};
+export type GetVersionCoreApiResponse = /** status 200 Return the core service version */ Version;
 export type GetVersionCoreApiArg = void;
 export type TrackRange = {
   begin?: number;
@@ -1290,169 +898,6 @@ export type ElectricalProfile = {
   track_ranges?: TrackRange[];
   value?: string;
 };
-export type Infra = {
-  created: string;
-  generated_version: string | null;
-  id: number;
-  locked: boolean;
-  modified: string;
-  name: string;
-  railjson_version: string;
-  state:
-    | 'NOT_LOADED'
-    | 'INITIALIZING'
-    | 'DOWNLOADING'
-    | 'PARSING_JSON'
-    | 'PARSING_INFRA'
-    | 'ADAPTING_KOTLIN'
-    | 'LOADING_SIGNALS'
-    | 'BUILDING_BLOCKS'
-    | 'CACHED'
-    | 'TRANSIENT_ERROR'
-    | 'ERROR';
-  version: string;
-};
-export type RailjsonFile = {
-  buffer_stops?: any;
-  catenaries?: any;
-  detectors?: any;
-  operational_points?: any;
-  routes?: any;
-  signals?: any;
-  speed_sections?: any;
-  switch_types?: any;
-  switches?: any;
-  track_section_links?: any;
-  track_sections?: any;
-  version?: string;
-};
-export type ObjectType =
-  | 'TrackSection'
-  | 'Signal'
-  | 'SpeedSection'
-  | 'Detector'
-  | 'TrackSectionLink'
-  | 'Switch'
-  | 'SwitchType'
-  | 'BufferStop'
-  | 'Route'
-  | 'OperationalPoint'
-  | 'Catenary';
-export type DeleteOperation = {
-  obj_id: string;
-  obj_type: ObjectType;
-  operation_type: 'DELETE';
-};
-export type Railjson = {
-  id: string;
-  [key: string]: any;
-};
-export type OperationObject = {
-  obj_type: ObjectType;
-  operation_type: 'CREATE' | 'UPDATE';
-  railjson: Railjson;
-};
-export type OperationResult = DeleteOperation | OperationObject;
-export type RailjsonObject = {
-  obj_type: ObjectType;
-  operation_type: 'CREATE';
-  railjson: Railjson;
-};
-export type Patch = {
-  from?: string;
-  op: 'add' | 'remove' | 'replace' | 'move' | 'copy' | 'test';
-  path: string;
-  value?: object;
-};
-export type Patches = Patch[];
-export type UpdateOperation = {
-  obj_id?: string;
-  obj_type: ObjectType;
-  operation_type: 'UPDATE';
-  railjson_patch: Patches;
-};
-export type Operation = RailjsonObject | DeleteOperation | UpdateOperation;
-export type Point3D = number[];
-export type Point = {
-  coordinates: Point3D;
-  type: 'Point';
-};
-export type LineString = {
-  coordinates: Point3D[];
-  type: 'LineString';
-};
-export type Polygon = {
-  coordinates: Point3D[][];
-  type: 'Polygon';
-};
-export type MultiPoint = {
-  coordinates: Point3D[];
-  type: 'MultiPoint';
-};
-export type MultiLineString = {
-  coordinates: Point3D[][];
-  type: 'MultiLineString';
-};
-export type MultiPolygon = {
-  coordinates: Point3D[][][];
-  type: 'MultiPolygon';
-};
-export type Geometry = Point | LineString | Polygon | MultiPoint | MultiLineString | MultiPolygon;
-export type InfraErrorType =
-  | 'duplicated_group'
-  | 'empty_object'
-  | 'invalid_group'
-  | 'invalid_reference'
-  | 'invalid_route'
-  | 'invalid_switch_ports'
-  | 'missing_route'
-  | 'missing_buffer_stop'
-  | 'object_out_of_path'
-  | 'odd_buffer_stop_location'
-  | 'out_of_range'
-  | 'overlapping_speed_sections'
-  | 'overlapping_switches'
-  | 'overlapping_track_links'
-  | 'overlapping_catenaries'
-  | 'unknown_port_name'
-  | 'unused_port';
-export type InfraError = {
-  geographic?: Geometry | null;
-  information: {
-    error_type: InfraErrorType;
-    field?: string;
-    is_warning: boolean;
-    obj_id: string;
-    obj_type: 'TrackSection' | 'Signal' | 'BufferStop' | 'Detector' | 'Switch' | 'Route';
-  };
-  schematic?: object | null;
-};
-export type BoundingBox = number[][];
-export type Zone = {
-  geo?: BoundingBox;
-  sch?: BoundingBox;
-};
-export type Direction = 'START_TO_STOP' | 'STOP_TO_START';
-export type DirectionalTrackRange = {
-  begin: number;
-  direction: Direction;
-  end: number;
-  track: string;
-};
-export type TrackLocation = {
-  offset?: number;
-  track?: string;
-};
-export type RouteTrackRangesNotFoundError = {
-  type: 'NotFound';
-};
-export type RouteTrackRangesCantComputePathError = {
-  type: 'CantComputePath';
-};
-export type RouteTrackRangesComputed = {
-  track_ranges: DirectionalTrackRange[];
-  type: 'Computed';
-};
 export type ViewMetadata = {
   attribution?: string;
   maxzoom?: number;
@@ -1463,15 +908,19 @@ export type ViewMetadata = {
   tiles?: string[];
   type?: string;
 };
-export type SpeedDependantPower = {
-  powers: number[];
-  speeds: number[];
+export type Identifier = string;
+export type ApplicableDirections = 'START_TO_STOP' | 'STOP_TO_START' | 'BOTH';
+export type ApplicableDirectionsTrackRange = {
+  applicable_directions: ApplicableDirections;
+  begin: number;
+  end: number;
+  track: Identifier;
 };
+export type NonBlankString = string;
 export type Catenary = {
-  efficiency: number;
-  energy_source_type: 'Catenary';
-  max_input_power: SpeedDependantPower;
-  max_output_power: SpeedDependantPower;
+  id: Identifier;
+  track_ranges: ApplicableDirectionsTrackRange[];
+  voltage: NonBlankString;
 };
 export type EnergyStorage = {
   capacity: number;
@@ -1482,6 +931,10 @@ export type EnergyStorage = {
   soc: number;
   soc_max: number;
   soc_min: number;
+};
+export type SpeedDependantPower = {
+  powers: number[];
+  speeds: number[];
 };
 export type PowerPack = {
   efficiency: number;
@@ -1799,6 +1252,11 @@ export type SearchTrackResult = {
   line_code: number;
   line_name: string;
 };
+export type Point3D = number[];
+export type MultiPoint = {
+  coordinates: Point3D[];
+  type: 'MultiPoint';
+};
 export type SearchOperationalPointResult = {
   ch: string;
   geographic: MultiPoint;
@@ -1812,6 +1270,10 @@ export type SearchOperationalPointResult = {
   }[];
   trigram: string;
   uic?: number;
+};
+export type Point = {
+  coordinates: Point3D;
+  type: 'Point';
 };
 export type SearchSignalResult = {
   aspects?: string[];
@@ -1974,10 +1436,15 @@ export type AllowanceValue =
   | ({
       value_type: 'percentage';
     } & AllowancePercentValue);
-export type Waypoint = {
-  geo_coordinate?: number[];
-  track_section?: string;
-}[];
+export type Waypoint =
+  | {
+      id: Identifier;
+      type: 'BufferStop';
+    }
+  | {
+      id: Identifier;
+      type: 'Detector';
+    };
 export type RangeAllowance = {
   begin_position: number;
   end_position: number;
@@ -2045,22 +1512,16 @@ export type TimetableWithSchedulesDetails = {
   name: string;
   train_schedule_summaries: TrainScheduleSummary[];
 };
-export type TrackOffsetLocation = {
-  offset: number;
-  track_section: string;
-  type: 'track_offset';
-};
-export type OperationalPointLocation = {
-  type: 'operational_point';
-  uic: number;
-};
 export type TimetableImportPathLocation =
-  | ({
+  | {
+      offset: number;
+      track_section: string;
       type: 'track_offset';
-    } & TrackOffsetLocation)
-  | ({
+    }
+  | {
       type: 'operational_point';
-    } & OperationalPointLocation);
+      uic: number;
+    };
 export type TimetableImportPathSchedule = {
   arrival_time: string;
   departure_time: string;
@@ -2079,6 +1540,14 @@ export type TimetableImportItem = {
   path: TimetableImportPathStep[];
   rolling_stock: string;
   trains: TimetableImportTrain[];
+};
+export type ConflictType = 'Spacing' | 'Routing';
+export type Conflict = {
+  conflict_type: ConflictType;
+  end_time: number;
+  start_time: number;
+  train_ids: number[];
+  train_names: string[];
 };
 export type TrainSchedulePatch = {
   allowances?: Allowance[];

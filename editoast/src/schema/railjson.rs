@@ -2,7 +2,7 @@ use super::{
     BufferStop, Catenary, Detector, NeutralSection, OSRDTyped, OperationalPoint, Route, Signal,
     SpeedSection, Switch, SwitchType, TrackSection, TrackSectionLink,
 };
-use crate::models::RAILJSON_VERSION;
+use crate::{models::RAILJSON_VERSION, schemas};
 
 use derivative::Derivative;
 use diesel::{
@@ -14,8 +14,13 @@ use diesel_async::{AsyncPgConnection as PgConnection, RunQueryDsl};
 use editoast_derive::EditoastError;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use thiserror::Error;
+use utoipa::ToSchema;
 
-#[derive(Deserialize, Derivative, Serialize, Clone, Debug)]
+schemas! {
+    RailJson,
+}
+
+#[derive(Deserialize, Derivative, Serialize, Clone, Debug, ToSchema)]
 #[derivative(Default)]
 #[serde(deny_unknown_fields)]
 pub struct RailJson {

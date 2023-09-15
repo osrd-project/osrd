@@ -10,7 +10,6 @@ mod routes;
 use std::collections::HashMap;
 use std::pin::Pin;
 
-use self::edition::edit;
 use super::params::List;
 use crate::core::infra_loading::InfraLoadRequest;
 use crate::core::infra_state::{InfraStateRequest, InfraStateResponse};
@@ -26,8 +25,8 @@ use crate::models::{
 use crate::schema::{ObjectType, SwitchType};
 use crate::views::pagination::{PaginatedResponse, PaginationQueryParam};
 use crate::DbPool;
-use actix_web::dev::HttpServiceFactory;
-use actix_web::web::{scope, Data, Json, Path, Query};
+use crate::{routes, schemas};
+use actix_web::web::{Data, Json, Path, Query};
 use actix_web::{delete, get, post, put, Either, HttpResponse, Responder};
 use chashmap::CHashMap;
 use chrono::Utc;
@@ -38,39 +37,61 @@ use editoast_derive::EditoastError;
 use futures::future::try_join_all;
 use futures::Future;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value as JsonValue};
 use strum::IntoEnumIterator;
 use thiserror::Error;
+use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 
-/// Return `/infra` routes
-pub fn routes() -> impl HttpServiceFactory {
-    scope("/infra")
-        .service((list, create, refresh, cache_status, railjson::routes()))
-        .service(
-            scope("/{infra}")
-                .service((
-                    get,
-                    load,
-                    delete,
-                    clone,
-                    edit,
-                    rename,
-                    lock,
-                    unlock,
-                    get_switch_types,
-                    get_speed_limit_tags,
-                    get_voltages,
-                ))
-                .service((
-                    errors::routes(),
-                    objects::routes(),
-                    lines::routes(),
-                    routes::routes(),
-                    pathfinding::routes(),
-                    attached::routes(),
-                )),
-        )
+routes! {
+    "/infra" => {
+        list,
+        create,
+        refresh,
+        cache_status,
+        railjson::routes(),
+        "/{id}" => {
+            get,
+            load,
+            delete,
+            clone,
+            edition::routes(),
+            rename,
+            lock,
+            unlock,
+            get_switch_types,
+            get_speed_limit_tags,
+            get_voltages,
+            (
+                errors::routes(),
+                objects::routes(),
+                lines::routes(),
+                routes::routes(),
+                pathfinding::routes(),
+                attached::routes(),
+            )
+        },
+    }
+}
+
+schemas! {
+    InfraForm,
+    RefreshResponse,
+    InfraState,
+    InfraWithState,
+    InfraPatchForm,
+    StatePayload,
+    attached::schemas(),
+    errors::schemas(),
+    pathfinding::schemas(),
+    routes::schemas(),
+}
+
+// Only meant to be used in utoipa::path as param()
+#[derive(IntoParams)]
+#[allow(unused)]
+struct InfraId {
+    /// An infra ID
+    id: i64,
 }
 
 #[derive(Debug, Error, EditoastError)]
@@ -82,7 +103,7 @@ pub enum InfraApiError {
     NotFound { infra_id: i64 },
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema, IntoParams)]
 #[serde(deny_unknown_fields)]
 pub struct InfraForm {
     pub name: String,
@@ -115,15 +136,30 @@ struct Voltage {
     voltage: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, IntoParams)]
 struct RefreshQueryParams {
+    /// Force the refresh of the layers
     #[serde(default)]
+    #[param(default = false)]
     force: bool,
+    /// Comma-separated list of infra IDs
     #[serde(default)]
+    #[param(value_type = String, example = "1,2,3")]
     infras: List<i64>,
 }
 
+#[derive(Serialize, ToSchema)]
+struct RefreshResponse {
+    infra_refreshed: Vec<i64>,
+}
+
 /// Refresh infra generated data
+#[utoipa::path(
+    params(RefreshQueryParams),
+    responses(
+        (status = 200, description = "A list thats contains the ID of the infras that were refreshed", body = inline(RefreshResponse)),
+    ),
+)]
 #[post("/refresh")]
 async fn refresh(
     db_pool: Data<DbPool>,
@@ -131,7 +167,7 @@ async fn refresh(
     query_params: Query<RefreshQueryParams>,
     infra_caches: Data<CHashMap<i64, InfraCache>>,
     map_layers: Data<MapLayers>,
-) -> Result<Json<JsonValue>> {
+) -> Result<Json<RefreshResponse>> {
     let mut conn = db_pool.get().await?;
     // Use a transaction to give scope to infra list lock
     let mut infras_list = vec![];
@@ -174,11 +210,20 @@ async fn refresh(
         )
         .await;
     }
+    let response = RefreshResponse {
+        infra_refreshed: refreshed_infra,
+    };
 
-    Ok(Json(json!({ "infra_refreshed": refreshed_infra })))
+    Ok(Json(response))
 }
 
-/// Return a list of infras
+/// Returns the list of infras in DB
+#[utoipa::path(
+    params(PaginationQueryParam),
+    responses(
+        (status = 200, description = "A list of infras", body = PaginatedInfras),
+    ),
+)]
 #[get("")]
 async fn list(
     db_pool: Data<DbPool>,
@@ -211,7 +256,7 @@ async fn list(
     Ok(Json(infras_with_state))
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Default, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Default, Deserialize, PartialEq, Eq, ToSchema)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum InfraState {
     #[default]
@@ -228,14 +273,20 @@ pub enum InfraState {
     Error,
 }
 
-#[derive(Debug, Clone, Serialize)]
-struct InfraWithState {
+#[derive(Debug, Clone, Serialize, ToSchema)]
+pub struct InfraWithState {
     #[serde(flatten)]
     pub infra: Infra,
     pub state: InfraState,
 }
 
-/// Return a specific infra
+/// Retrieve a specific infra
+#[utoipa::path(
+    params(InfraId),
+    responses(
+        (status = 200, description = "Information about the retrieved infra", body = InfraWithState),
+    ),
+)]
 #[get("")]
 async fn get(
     db_pool: Data<DbPool>,
@@ -257,6 +308,13 @@ async fn get(
 }
 
 /// Create an infra
+#[utoipa::path(
+    params(InfraId),
+    request_body = inline(InfraForm),
+    responses(
+        (status = 200, description = "Information about the created infra", body = Infra),
+    ),
+)]
 #[post("")]
 async fn create(db_pool: Data<DbPool>, data: Json<InfraForm>) -> Result<impl Responder> {
     let infra: Infra = data.into_inner().into();
@@ -265,6 +323,12 @@ async fn create(db_pool: Data<DbPool>, data: Json<InfraForm>) -> Result<impl Res
 }
 
 /// Duplicate an infra
+#[utoipa::path(
+    params(InfraForm, InfraId),
+    responses(
+        (status = 200, description = "The duplicated infra ID", body = i64),
+    ),
+)]
 #[post("/clone")]
 async fn clone(
     infra: Path<i64>,
@@ -313,7 +377,14 @@ async fn clone(
     Ok(Json(cloned_infra.id.unwrap()))
 }
 
-/// Delete an infra
+/// Delete an infra and all entities linked to it
+#[utoipa::path(
+    params(InfraId),
+    responses(
+        (status = 204, description = "The infra was deleted"),
+        (status = 404, description = "The infra was not found"),
+    )
+)]
 #[delete("")]
 async fn delete(
     infra: Path<i64>,
@@ -330,7 +401,7 @@ async fn delete(
 }
 
 /// Patch form for a project
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 struct InfraPatchForm {
     pub name: Option<String>,
 }
@@ -345,7 +416,14 @@ impl InfraPatchForm {
     }
 }
 
-/// Update an infra name
+/// Update an infrastructure name
+#[utoipa::path(
+    params(InfraId),
+    request_body = inline(InfraPatchForm),
+    responses(
+        (status = 200, description = "Information about the updated infra", body = Infra),
+    ),
+)]
 #[put("")]
 async fn rename(
     db_pool: Data<DbPool>,
@@ -362,6 +440,12 @@ async fn rename(
 }
 
 /// Return the railjson list of switch types
+#[utoipa::path(
+    params(InfraId),
+    responses(
+        (status = 200, description = "A switch type following Railjson spec", body = inline(Vec<SwitchType>)),
+    ),
+)]
 #[get("/switch_types")]
 async fn get_switch_types(
     infra: Path<i64>,
@@ -386,6 +470,17 @@ async fn get_switch_types(
 }
 
 /// Returns the set of speed limit tags for a given infra
+#[utoipa::path(
+    params(InfraId),
+    responses(
+        (
+            status = 200,
+            description = "The list of speed limit tags",
+            body = inline(Vec<String>),
+            example = json!(["freight", "heavy_load"])
+        ),
+    ),
+)]
 #[get("/speed_limit_tags")]
 async fn get_speed_limit_tags(
     infra: Path<i64>,
@@ -407,14 +502,27 @@ async fn get_speed_limit_tags(
     ))
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, IntoParams)]
 struct GetVoltagesQueryParams {
     #[serde(default)]
+    #[param(default = false)]
+    /// Include rolling stocks modes or not
     include_rolling_stock_modes: bool,
 }
 
 /// Returns the set of voltages for a given infra and/or rolling_stocks modes.
 /// If include_rolling_stocks_modes is true, it returns also rolling_stocks modes.
+#[utoipa::path(
+    params(GetVoltagesQueryParams, InfraId),
+    responses(
+        (
+            status = 200,
+            description = "The list of voltages",
+            body = inline(Vec<String>),
+            example = json!(["750", "1500", "2500.5"])
+        ),
+    )
+)]
 #[get("/voltages")]
 async fn get_voltages(
     infra: Path<i64>,
@@ -436,7 +544,13 @@ async fn get_voltages(
     Ok(Json(voltages.into_iter().map(|el| (el.voltage)).collect()))
 }
 
-/// Lock an infra
+/// Lock an infra from edition
+#[utoipa::path(
+    params(InfraId),
+    responses(
+        (status = 204, description = "The infra was locked"),
+    ),
+)]
 #[post("/lock")]
 async fn lock(infra: Path<i64>, db_pool: Data<DbPool>) -> Result<HttpResponse> {
     let infra_id = infra.into_inner();
@@ -449,7 +563,13 @@ async fn lock(infra: Path<i64>, db_pool: Data<DbPool>) -> Result<HttpResponse> {
     Ok(HttpResponse::NoContent().finish())
 }
 
-/// Unlock an infra
+/// Unlock an infra from edition
+#[utoipa::path(
+    params(InfraId),
+    responses(
+        (status = 204, description = "The infra was unlocked"),
+    ),
+)]
 #[post("/unlock")]
 async fn unlock(infra: Path<i64>, db_pool: Data<DbPool>) -> Result<HttpResponse> {
     let infra_id = infra.into_inner();
@@ -462,8 +582,7 @@ async fn unlock(infra: Path<i64>, db_pool: Data<DbPool>) -> Result<HttpResponse>
     Ok(HttpResponse::NoContent().finish())
 }
 
-#[derive(Debug, Default, Deserialize)]
-
+#[derive(Debug, Default, Deserialize, ToSchema)]
 pub struct StatePayload {
     infra: Option<i64>,
 }
@@ -485,6 +604,13 @@ async fn call_core_infra_load(
     Ok(())
 }
 
+/// Load an infra if not loaded
+#[utoipa::path(
+    params(InfraId),
+    responses(
+        (status = 204, description = "The infra was loaded"),
+    ),
+)]
 #[post("/load")]
 async fn load(
     infra: Path<i64>,
@@ -512,18 +638,29 @@ pub async fn call_core_infra_state(
     Ok(response)
 }
 
+/// Returns the status of the infras in cache
+#[utoipa::path(
+    params(InfraId),
+    request_body = inline(Option<StatePayload>),
+    responses(
+        (
+            status = 200,
+            description = "The status of the infras in cache",
+            body = inline(HashMap<String, InfraStateResponse>),
+        ),
+    )
+)]
 #[get("/cache_status")]
 async fn cache_status(
     payload: Either<Json<StatePayload>, ()>,
     db_pool: Data<DbPool>,
     core: Data<CoreClient>,
 ) -> Result<Json<HashMap<String, InfraStateResponse>>> {
-    let payload = match payload {
+    let StatePayload { infra } = match payload {
         Either::Left(state) => state.into_inner(),
         Either::Right(_) => Default::default(),
     };
-    let infra_id = payload.infra;
-    Ok(Json(call_core_infra_state(infra_id, db_pool, core).await?))
+    Ok(Json(call_core_infra_state(infra, db_pool, core).await?))
 }
 
 #[cfg(test)]
@@ -540,6 +677,7 @@ pub mod tests {
     use actix_web::test as actix_test;
     use actix_web::test::{call_and_read_body_json, call_service, read_body_json, TestRequest};
     use rstest::*;
+    use serde_json::json;
 
     fn delete_infra_request(infra_id: i64) -> Request {
         TestRequest::delete()
