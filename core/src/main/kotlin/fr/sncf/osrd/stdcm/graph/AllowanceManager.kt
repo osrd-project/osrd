@@ -3,6 +3,7 @@ package fr.sncf.osrd.stdcm.graph
 import fr.sncf.osrd.envelope.Envelope
 import fr.sncf.osrd.envelope_sim.EnvelopeSimContext
 import fr.sncf.osrd.envelope_sim.TrainPhysicsIntegrator
+import fr.sncf.osrd.envelope_sim.TrainPhysicsIntegrator.arePositionsEqual
 import fr.sncf.osrd.sim_infra.api.BlockId
 import fr.sncf.osrd.utils.units.Distance.Companion.fromMeters
 import java.util.*
@@ -23,15 +24,15 @@ class AllowanceManager(private val graph: STDCMGraph) {
             oldEdge.addedDelay
         )
         if (affectedEdges.isEmpty())
-            return null // No space to try the allowance
+            return null
         val context = makeAllowanceContext(affectedEdges)
+        if (arePositionsEqual(context.path.length, 0.0))
+            return null // No space to try the allowance
         val oldEnvelope = mergeEnvelopes(graph, affectedEdges, context)
         val newEnvelope = findEngineeringAllowance(context, oldEnvelope, neededDelay)
-            ?: return null
-        // We couldn't find an envelope
+            ?: return null // We couldn't find an envelope
         val newPreviousEdge = makeNewEdges(affectedEdges, newEnvelope)
-            ?: return null
-        // The new edges are invalid, conflicts shouldn't happen here but it can be too slow
+            ?: return null // The new edges are invalid, conflicts shouldn't happen here but it can be too slow
         val newPreviousNode = newPreviousEdge.getEdgeEnd(graph)
         return STDCMEdgeBuilder.fromNode(graph, newPreviousNode, oldEdge.block)
             .findEdgeSameNextOccupancy(oldEdge.timeNextOccupancy)
