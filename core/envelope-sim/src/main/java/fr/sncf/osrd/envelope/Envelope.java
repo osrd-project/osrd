@@ -1,11 +1,16 @@
 package fr.sncf.osrd.envelope;
 
+import static fr.sncf.osrd.envelope_sim.TrainPhysicsIntegrator.arePositionsEqual;
+import static fr.sncf.osrd.envelope_sim.TrainPhysicsIntegrator.areSpeedsEqual;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import fr.sncf.osrd.envelope.part.EnvelopePart;
+import fr.sncf.osrd.envelope_sim.EnvelopeProfile;
 import fr.sncf.osrd.reporting.exceptions.ErrorType;
 import fr.sncf.osrd.reporting.exceptions.OSRDError;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Stream;
 
@@ -239,6 +244,15 @@ public final class Envelope implements Iterable<EnvelopePart>, SearchableEnvelop
      * @return a list of envelope parts spanning from beginPosition to endPosition
      */
     public EnvelopePart[] slice(double beginPosition, double beginSpeed, double endPosition, double endSpeed) {
+        if (arePositionsEqual(beginPosition, endPosition)) {
+            assert Double.isNaN(beginSpeed) || areSpeedsEqual(beginSpeed, interpolateSpeed(beginPosition));
+            assert Double.isNaN(endSpeed) || areSpeedsEqual(endSpeed, interpolateSpeed(endPosition));
+            return new EnvelopePart[]{new EnvelopePart(
+                    Map.of(
+                            EnvelopeProfile.class, EnvelopeProfile.CONSTANT_SPEED
+                    ), new double[]{0}, new double[]{interpolateSpeed(beginPosition)}, new double[]{}
+            )};
+        }
         int beginIndex = 0;
         var beginPartIndex = 0;
         if (beginPosition != Double.NEGATIVE_INFINITY) {
