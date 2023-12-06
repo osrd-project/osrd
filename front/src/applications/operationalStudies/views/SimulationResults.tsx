@@ -62,6 +62,12 @@ export default function SimulationResults({
   const [initialHeightOfSpaceCurvesSlopesChart, setInitialHeightOfSpaceCurvesSlopesChart] =
     useState(heightOfSpaceCurvesSlopesChart);
 
+  // X scale domain shared between SpeedSpace and SpaceCurvesSlopes charts.
+  const [positionScaleDomain, setPositionScaleDomain] = useState<{ [key: string]: number[] }>({
+    initial: [],
+    current: [],
+  });
+
   const { data: selectedTrainSchedule } = osrdEditoastApi.endpoints.getTrainScheduleById.useQuery(
     {
       id: selectedTrain?.id as number,
@@ -176,6 +182,8 @@ export default function SimulationResults({
               selectedTrain={selectedTrain}
               timePosition={timePosition}
               trainRollingStock={selectedTrainRollingStock}
+              sharedXScaleDomain={positionScaleDomain}
+              setSharedXScaleDomain={setPositionScaleDomain}
             />
           </div>
         </div>
@@ -210,6 +218,8 @@ export default function SimulationResults({
                 selectedTrain={selectedTrain}
                 timePosition={timePosition}
                 positionValues={positionValues}
+                sharedXScaleDomain={positionScaleDomain}
+                setSharedXScaleDomain={setPositionScaleDomain}
               />
             </Rnd>
           )}

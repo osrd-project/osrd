@@ -257,6 +257,7 @@ export const enableInteractivity = <
   simulationIsPlaying: boolean,
   dispatchUpdateTimePositionValues: (newTimePositionValues: Date) => void,
   chartDimensions: [Date, Date],
+  setSharedXScaleDomain?: React.Dispatch<React.SetStateAction<{ [key: string]: number[] }>>,
   additionalValues: ChartAxes[] = [] // more values to display on the same chart
 ) => {
   if (!chart) return;
@@ -271,6 +272,11 @@ export const enableInteractivity = <
       event.sourceEvent.preventDefault();
       const zoomFunctions = updateChart(chart, keyValues, additionalValues, rotate, event);
       const newChart = { ...chart, x: zoomFunctions.newX, y: zoomFunctions.newY };
+      if (setSharedXScaleDomain)
+        setSharedXScaleDomain((prevState) => ({
+          ...prevState,
+          current: newChart.x.domain() as number[],
+        }));
       setChart(newChart);
     })
     .filter(

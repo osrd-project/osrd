@@ -46,6 +46,8 @@ export type SpeedSpaceChartProps = {
   selectedTrain: SimulationReport | Train;
   timePosition: Date;
   trainRollingStock?: LightRollingStock;
+  sharedXScaleDomain?: { [key: string]: number[] };
+  setSharedXScaleDomain?: React.Dispatch<React.SetStateAction<{ [key: string]: number[] }>>;
 };
 
 /**
@@ -64,6 +66,8 @@ export default function SpeedSpaceChart({
   timePosition,
   positionValues,
   trainRollingStock,
+  sharedXScaleDomain,
+  setSharedXScaleDomain,
 }: SpeedSpaceChartProps) {
   const simulationIsPlaying = useSelector(getIsPlaying);
   const speedSpaceSettings = useSelector(getSpeedSpaceSettings);
@@ -121,6 +125,10 @@ export default function SpeedSpaceChart({
       ref,
       chart
     ) as SpeedSpaceChart;
+
+    if (resetChart && setSharedXScaleDomain)
+      setSharedXScaleDomain((prevState) => ({ ...prevState, initial: localChart.x.domain() }));
+
     setChart(localChart);
     drawTrain(trainSimulation, rotate, localSettings, localChart);
     setHasJustRotated(false);
@@ -153,8 +161,13 @@ export default function SpeedSpaceChart({
    * - the chart has been resized (vertically only)
    */
   useEffect(() => {
+    if (chart && sharedXScaleDomain) {
+      const newChart = { ...chart };
+      newChart.x.domain(sharedXScaleDomain.current);
+      setChart(newChart);
+    }
     createChartAndTrain();
-  }, [rotate, localSettings, chartHeight]);
+  }, [rotate, localSettings, chartHeight, sharedXScaleDomain]);
 
   /**
    * reset chart (only if resetChart is true)
@@ -166,6 +179,9 @@ export default function SpeedSpaceChart({
         toggleRotation();
       } else {
         createChartAndTrain();
+      }
+      if (chart && setSharedXScaleDomain) {
+        setSharedXScaleDomain((prevState) => ({ ...prevState, current: prevState.initial }));
       }
     }
   }, [resetChart]);
@@ -200,6 +216,7 @@ export default function SpeedSpaceChart({
       simulationIsPlaying,
       dispatchUpdateTimePositionValues,
       timeScaleRange,
+      setSharedXScaleDomain,
       additionalAxes
     );
   }, [chart, additionalAxes]);

@@ -93,6 +93,8 @@ type SpaceCurvesSlopesProps = {
   positionValues: PositionsSpeedTimes<Date>;
   selectedTrain: Train;
   timePosition: Date;
+  sharedXScaleDomain?: { [key: string]: number[] };
+  setSharedXScaleDomain?: React.Dispatch<React.SetStateAction<{ [key: string]: number[] }>>;
 };
 
 const SpaceCurvesSlopes = ({
@@ -100,12 +102,15 @@ const SpaceCurvesSlopes = ({
   positionValues,
   selectedTrain,
   timePosition,
+  sharedXScaleDomain,
+  setSharedXScaleDomain,
 }: SpaceCurvesSlopesProps) => {
   const dispatch = useDispatch();
   const simulationIsPlaying = useSelector(getIsPlaying);
 
   const [chart, setChart] = useState<SpeedSpaceChart | undefined>(undefined);
   const [height, setHeight] = useState(initialHeight);
+  const [yScaleDomain, setYScaleDomain] = useState<number[]>([]);
 
   const ref = useRef<HTMLDivElement>(null);
   const rotate = false;
@@ -165,6 +170,7 @@ const SpaceCurvesSlopes = ({
     const yMax = d3.max(trainData.slopesHistogram, (d) => d.gradient) || 0;
     const defineY = chart === undefined ? defineLinear(yMax, 0, yMin) : chart.y;
 
+    if (chart === undefined) setYScaleDomain(defineY.domain());
     const width = parseInt(d3.select(`#container-${CHART_ID}`).style('width'), 10);
     return defineChart(
       width,
@@ -255,6 +261,7 @@ const SpaceCurvesSlopes = ({
       simulationIsPlaying,
       dispatchUpdateTimePositionValues,
       timeScaleRange,
+      setSharedXScaleDomain,
       [CHART_AXES.SPACE_GRADIENT, CHART_AXES.SPACE_RADIUS, CHART_AXES.SPACE_HEIGHT]
     );
     setChart(chartLocal);
@@ -265,7 +272,17 @@ const SpaceCurvesSlopes = ({
     setHeight(newHeight);
   };
 
-  useEffect(() => drawTrain(), [trainData, height]);
+  useEffect(() => {
+    if (chart && sharedXScaleDomain) {
+      const newChart = { ...chart };
+      newChart.x.domain(sharedXScaleDomain.current);
+      if (sharedXScaleDomain.initial === sharedXScaleDomain.current) {
+        newChart.y.domain(yScaleDomain);
+      }
+      setChart(newChart);
+    }
+    drawTrain();
+  }, [trainData, height, sharedXScaleDomain]);
 
   useEffect(() => setHeight(initialHeight), [initialHeight]);
 
