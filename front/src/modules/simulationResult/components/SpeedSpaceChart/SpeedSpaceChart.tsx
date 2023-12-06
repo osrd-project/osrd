@@ -46,8 +46,18 @@ export type SpeedSpaceChartProps = {
   selectedTrain: SimulationReport | Train;
   timePosition: Date;
   trainRollingStock?: LightRollingStock;
-  sharedXScaleDomain?: { [key: string]: number[] };
-  setSharedXScaleDomain?: React.Dispatch<React.SetStateAction<{ [key: string]: number[] }>>;
+  sharedXScaleDomain?: {
+    initial: number[];
+    current: number[];
+    source?: 'speedSpaceChart' | 'slopeCurvesChart';
+  };
+  setSharedXScaleDomain?: React.Dispatch<
+    React.SetStateAction<{
+      initial: number[];
+      current: number[];
+      source?: 'speedSpaceChart' | 'slopeCurvesChart';
+    }>
+  >;
 };
 
 /**
@@ -158,13 +168,17 @@ export default function SpeedSpaceChart({
    * - the chart has been resized (vertically only)
    */
   useEffect(() => {
-    if (chart && sharedXScaleDomain) {
+    createChartAndTrain();
+  }, [rotate, localSettings, chartHeight]);
+
+  useEffect(() => {
+    if (chart && sharedXScaleDomain && sharedXScaleDomain.source !== 'speedSpaceChart') {
       const newChart = { ...chart };
       newChart.x.domain(sharedXScaleDomain.current);
       setChart(newChart);
+      createChartAndTrain();
     }
-    createChartAndTrain();
-  }, [rotate, localSettings, chartHeight, sharedXScaleDomain]);
+  }, [sharedXScaleDomain]);
 
   /**
    * reset chart (only if resetChart is true)
@@ -175,7 +189,11 @@ export default function SpeedSpaceChart({
         // cancel rotation and redraw the train
         toggleRotation();
       } else if (setSharedXScaleDomain) {
-        setSharedXScaleDomain((prevState) => ({ ...prevState, current: prevState.initial }));
+        setSharedXScaleDomain((prevState) => ({
+          ...prevState,
+          current: prevState.initial,
+          source: undefined,
+        }));
       } else {
         createChartAndTrain();
       }
@@ -215,7 +233,7 @@ export default function SpeedSpaceChart({
       setSharedXScaleDomain,
       additionalAxes
     );
-  }, [chart, additionalAxes]);
+  }, [chart, additionalAxes, sharedXScaleDomain]);
 
   /**
    * coordinate guidelines and pointers with other graphs

@@ -12,6 +12,7 @@ import {
   isSpaceTimeChart,
 } from 'modules/simulationResult/components/ChartHelpers/ChartHelpers';
 import {
+  CHART_AXES,
   ChartAxes,
   LIST_VALUES,
 } from 'modules/simulationResult/components/simulationResultsConsts';
@@ -257,7 +258,13 @@ export const enableInteractivity = <
   simulationIsPlaying: boolean,
   dispatchUpdateTimePositionValues: (newTimePositionValues: Date) => void,
   chartDimensions: [Date, Date],
-  setSharedXScaleDomain?: React.Dispatch<React.SetStateAction<{ [key: string]: number[] }>>,
+  setSharedXScaleDomain?: React.Dispatch<
+    React.SetStateAction<{
+      initial: number[];
+      current: number[];
+      source?: 'speedSpaceChart' | 'slopeCurvesChart';
+    }>
+  >,
   additionalValues: ChartAxes[] = [] // more values to display on the same chart
 ) => {
   if (!chart) return;
@@ -276,6 +283,7 @@ export const enableInteractivity = <
         setSharedXScaleDomain((prevState) => ({
           ...prevState,
           current: newChart.x.domain() as number[],
+          source: keyValues === CHART_AXES.SPACE_SPEED ? 'speedSpaceChart' : 'slopeCurvesChart',
         }));
       setChart(newChart);
     })

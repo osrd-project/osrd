@@ -93,8 +93,18 @@ type SpaceCurvesSlopesProps = {
   positionValues: PositionsSpeedTimes<Date>;
   selectedTrain: Train;
   timePosition: Date;
-  sharedXScaleDomain?: { [key: string]: number[] };
-  setSharedXScaleDomain?: React.Dispatch<React.SetStateAction<{ [key: string]: number[] }>>;
+  sharedXScaleDomain?: {
+    initial: number[];
+    current: number[];
+    source?: 'speedSpaceChart' | 'slopeCurvesChart';
+  };
+  setSharedXScaleDomain?: React.Dispatch<
+    React.SetStateAction<{
+      initial: number[];
+      current: number[];
+      source?: 'speedSpaceChart' | 'slopeCurvesChart';
+    }>
+  >;
 };
 
 const SpaceCurvesSlopes = ({
@@ -273,16 +283,20 @@ const SpaceCurvesSlopes = ({
   };
 
   useEffect(() => {
-    if (chart && sharedXScaleDomain) {
+    drawTrain();
+  }, [trainData, height]);
+
+  useEffect(() => {
+    if (chart && sharedXScaleDomain && sharedXScaleDomain.source !== 'slopeCurvesChart') {
       const newChart = { ...chart };
       newChart.x.domain(sharedXScaleDomain.current);
       if (sharedXScaleDomain.initial === sharedXScaleDomain.current) {
         newChart.y.domain(yScaleDomain);
       }
       setChart(newChart);
+      drawTrain();
     }
-    drawTrain();
-  }, [trainData, height, sharedXScaleDomain]);
+  }, [sharedXScaleDomain]);
 
   useEffect(() => setHeight(initialHeight), [initialHeight]);
 

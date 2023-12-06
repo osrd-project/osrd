@@ -64,7 +64,11 @@ export default function SimulationResults({
     useState(heightOfSpaceCurvesSlopesChart);
 
   // X scale domain shared between SpeedSpace and SpaceCurvesSlopes charts.
-  const [positionScaleDomain, setPositionScaleDomain] = useState<{ [key: string]: number[] }>({
+  const [positionScaleDomain, setPositionScaleDomain] = useState<{
+    initial: number[];
+    current: number[];
+    source?: 'speedSpaceChart' | 'slopeCurvesChart';
+  }>({
     initial: [],
     current: [],
   });
