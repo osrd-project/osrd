@@ -126,9 +126,6 @@ export default function SpeedSpaceChart({
       chart
     ) as SpeedSpaceChart;
 
-    if (resetChart && setSharedXScaleDomain)
-      setSharedXScaleDomain((prevState) => ({ ...prevState, initial: localChart.x.domain() }));
-
     setChart(localChart);
     drawTrain(trainSimulation, rotate, localSettings, localChart);
     setHasJustRotated(false);
@@ -177,11 +174,10 @@ export default function SpeedSpaceChart({
       if (rotate) {
         // cancel rotation and redraw the train
         toggleRotation();
+      } else if (setSharedXScaleDomain) {
+        setSharedXScaleDomain((prevState) => ({ ...prevState, current: prevState.initial }));
       } else {
         createChartAndTrain();
-      }
-      if (chart && setSharedXScaleDomain) {
-        setSharedXScaleDomain((prevState) => ({ ...prevState, current: prevState.initial }));
       }
     }
   }, [resetChart]);

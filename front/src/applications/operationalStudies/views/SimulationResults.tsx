@@ -29,6 +29,7 @@ import TimeButtons from 'modules/simulationResult/components/TimeButtons';
 import TimeLine from 'modules/simulationResult/components/TimeLine/TimeLine';
 import TrainDetails from 'modules/simulationResult/components/TrainDetails';
 import DriverTrainSchedule from 'modules/trainschedule/components/DriverTrainSchedule/DriverTrainSchedule';
+import getScaleDomainFromValues from 'modules/simulationResult/components/ChartHelpers/getScaleDomainFromValues';
 
 const MAP_MIN_HEIGHT = 450;
 
@@ -91,6 +92,14 @@ export default function SimulationResults({
       dispatch(persistentRedoSimulation());
     }
   };
+
+  useEffect(() => {
+    if (selectedTrain) {
+      const positions = selectedTrain.base.speeds.map((speed) => speed.position);
+      const newPositionScaleDomain = getScaleDomainFromValues(positions);
+      setPositionScaleDomain({ initial: newPositionScaleDomain, current: newPositionScaleDomain });
+    }
+  }, [selectedTrain]);
 
   useEffect(() => {
     // Setup the listener to undi /redo
