@@ -254,7 +254,7 @@
         "catenaries": "Électrification",
         "catenary-default": "Électrification par défaut",
         "label": "Outil \"Électrification\"",
-        "voltage": "{{voltage}}V"
+        "voltage": "{{voltage}}"
       },
       "detector-edition": {
         "actions": {

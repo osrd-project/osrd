@@ -1009,7 +1009,7 @@ pub mod tests {
         }
         Catenary {
             id: id.as_ref().into(),
-            voltage: NonBlankString("1500".to_string()),
+            voltage: NonBlankString("1500V".to_string()),
             track_ranges,
         }
     }

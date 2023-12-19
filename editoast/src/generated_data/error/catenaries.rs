@@ -149,11 +149,11 @@ mod tests {
         let mut infra_cache = create_small_infra_cache();
         let track_ranges_1 = vec![("A", 20., 220.)];
         let mut catenary_1 = create_catenary_cache("Cat_error_1", track_ranges_1);
-        catenary_1.voltage = "1500".into();
+        catenary_1.voltage = "1500V".into();
         infra_cache.add(catenary_1).unwrap();
         let track_ranges_2 = vec![("A", 100., 150.), ("A", 200., 480.)];
         let mut catenary_2 = create_catenary_cache("Cat_error_2", track_ranges_2);
-        catenary_2.voltage = "25000".into();
+        catenary_2.voltage = "25000V".into();
         infra_cache.add(catenary_2).unwrap();
         let errors = check_overlapping(&infra_cache, &Graph::load(&infra_cache));
         assert_eq!(1, errors.len());
