@@ -3917,14 +3917,14 @@ paths:
           content:
             application/json:
               example:
-                '1500V':
+                1500V:
                 - A
                 - B
                 - C
-                '25000V':
-                - '25000V'
-                - '22500V'
-                - '20000V'
+                25000V:
+                - 25000V
+                - 22500V
+                - 20000V
               schema:
                 additionalProperties:
                   $ref: '#/components/schemas/LevelValues'
@@ -4081,9 +4081,9 @@ paths:
             application/json:
               schema:
                 example:
-                - '750V'
-                - '1500V'
-                - '2500.5V'
+                - 750V
+                - 1500V
+                - 2500.5V
                 items:
                   type: string
                 type: array
@@ -4684,9 +4684,9 @@ paths:
             application/json:
               schema:
                 example:
-                - '750V'
-                - '1500V'
-                - '2500.5V'
+                - 750V
+                - 1500V
+                - 2500.5V
                 items:
                   type: string
                 type: array
