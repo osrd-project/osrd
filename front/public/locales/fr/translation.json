@@ -253,8 +253,7 @@
         "add-new-catenary": "Ajouter une nouvelle électrification",
         "catenaries": "Électrification",
         "catenary-default": "Électrification par défaut",
-        "label": "Outil \"Électrification\"",
-        "voltage": "{{voltage}}"
+        "label": "Outil \"Électrification\""
       },
       "detector-edition": {
         "actions": {

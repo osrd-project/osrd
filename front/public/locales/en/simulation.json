@@ -31,10 +31,6 @@
     "incompatible": "Incompatible power restriction "
   },
   "electricalProfiles": {
-    "25000V": "25000V",
-    "1500V": "1500V",
-    "15000V": "15000V 16/2/3",
-    "3000V": "3000V",
     "thermal": "Combustion engine",
     "used": "used",
     "unused": "unused",

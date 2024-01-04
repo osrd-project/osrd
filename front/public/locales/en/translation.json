@@ -253,8 +253,7 @@
         "add-new-catenary": "Add new catenary",
         "catenaries": "Electrification",
         "catenary-default": "Default catenary",
-        "label": "Catenary tool",
-        "voltage": "{{voltage}}"
+        "label": "Catenary tool"
       },
       "detector-edition": {
         "actions": {
