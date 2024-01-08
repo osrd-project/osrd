@@ -108,5 +108,3 @@ SET electrification_ranges = (
     FROM jsonb_array_elements(electrification_ranges) elem
 )
 WHERE electrification_ranges IS NOT NULL AND electrification_ranges != '[]'::jsonb;
-
-UPDATE infra SET "version" = (NULLIF("version", '0')::int + 1)::text;
