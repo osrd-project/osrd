@@ -235,7 +235,7 @@ mod tests {
     fn parse_catenaries() {
         let rj = parse_osm("src/tests/minimal_rail.osm.pbf".into()).unwrap();
         assert_eq!(1, rj.catenaries.len());
-        assert_eq!("15000", rj.catenaries[0].voltage);
+        assert_eq!("15000V", rj.catenaries[0].voltage);
     }
 
     #[test]
