@@ -145,7 +145,7 @@ public abstract class AbstractAllowanceWithRanges implements Allowance {
         return res;
     }
 
-    private record RangePercentage(AllowanceRange range, double percentage) {
+    private record RangeBaseTime(AllowanceRange range, double baseTime) {
     }
 
     /**
@@ -166,23 +166,20 @@ public abstract class AbstractAllowanceWithRanges implements Allowance {
             imposedTransitionSpeeds[i] = NaN;
         imposedTransitionSpeeds[ranges.size()] = envelopeRegion.getEndSpeed();
 
-        // build an array of (range, percentage) in order to sort the array rangeOrder by ascending percentage
-        var rangePercentages = new RangePercentage[ranges.size()];
+        // build an array of (range, baseTime) in order to sort the array rangeOrder by ascending base time
+        var baseTimes = new RangeBaseTime[ranges.size()];
         for (var i = 0; i < ranges.size(); i++) {
             var range = ranges.get(i);
-            var percentage = range.value.getAllowanceRatio(
-                    envelopeRegion.getTimeBetween(range.beginPos, range.endPos),
-                    range.endPos - range.beginPos
-            );
-            rangePercentages[i] = new RangePercentage(range, percentage);
+            var baseTime = envelopeRegion.getTimeBetween(range.beginPos, range.endPos);
+            baseTimes[i] = new RangeBaseTime(range, baseTime);
         }
 
         // the order in which the ranges should be computed
-        // ranges are computed with increasing percentage values
+        // ranges are computed with increasing baseTime values
         var rangeOrder = new Integer[ranges.size()];
         for (var i = 0; i < ranges.size(); i++)
             rangeOrder[i] = i;
-        Arrays.sort(rangeOrder, Comparator.comparingDouble(rangeIndex -> rangePercentages[rangeIndex].percentage));
+        Arrays.sort(rangeOrder, Comparator.comparingDouble(rangeIndex -> baseTimes[rangeIndex].baseTime));
 
         var res = new Envelope[ranges.size()];
 
