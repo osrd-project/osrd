@@ -8,6 +8,7 @@ import static fr.sncf.osrd.envelope_sim.MaxEffortEnvelopeBuilder.makeComplexMaxE
 import static fr.sncf.osrd.envelope_sim.MaxEffortEnvelopeBuilder.makeSimpleMaxEffortEnvelope;
 import static fr.sncf.osrd.envelope_sim.SimpleContextBuilder.TIME_STEP;
 import static fr.sncf.osrd.envelope_sim.SimpleContextBuilder.makeSimpleContext;
+import static fr.sncf.osrd.envelope_sim.TrainPhysicsIntegrator.areTimesEqual;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -89,7 +90,7 @@ public class AllowanceRangesTests {
         var baseTime1 = maxEffortEnvelope.getTimeBetween(0, rangesTransition);
         var baseTime2 = maxEffortEnvelope.getTimeBetween(rangesTransition, length);
         var totalBaseTime = maxEffortEnvelope.getTotalTime();
-        assertEquals(totalBaseTime, baseTime1 + baseTime2, .001);
+        assertTrue(areTimesEqual(totalBaseTime, baseTime1 + baseTime2));
         var distance = getDistance(allowance);
         var targetTime1 = baseTime1 + value1.getAllowanceTime(baseTime1, rangesTransition);
         var targetTime2 = baseTime2 + value2.getAllowanceTime(baseTime2, distance - rangesTransition);
@@ -122,7 +123,7 @@ public class AllowanceRangesTests {
         var baseTime2 = maxEffortEnvelope.getTimeBetween(rangesTransitions[1], rangesTransitions[2]);
         var baseTime3 = maxEffortEnvelope.getTimeBetween(rangesTransitions[2], rangesTransitions[3]);
         var totalBaseTime = maxEffortEnvelope.getTotalTime();
-        assertEquals(totalBaseTime, baseTime1 + baseTime2 + baseTime3, .001);
+        assertTrue(areTimesEqual(totalBaseTime, baseTime1 + baseTime2 + baseTime3));
         var targetTime1 = baseTime1 + value1.getAllowanceTime(baseTime1, rangesTransitions[1] - rangesTransitions[0]);
         var targetTime2 = baseTime2 + value2.getAllowanceTime(baseTime2, rangesTransitions[2] - rangesTransitions[1]);
         var targetTime3 = baseTime3 + value3.getAllowanceTime(baseTime3, rangesTransitions[3] - rangesTransitions[2]);
@@ -157,7 +158,7 @@ public class AllowanceRangesTests {
         var baseTime2 = maxEffortEnvelope.getTimeBetween(rangesTransitions[1], rangesTransitions[2]);
         var baseTime3 = maxEffortEnvelope.getTimeBetween(rangesTransitions[2], rangesTransitions[3]);
         var totalBaseTime = maxEffortEnvelope.getTotalTime();
-        assertEquals(totalBaseTime, baseTime1 + baseTime2 + baseTime3, .001);
+        assertTrue(areTimesEqual(totalBaseTime, baseTime1 + baseTime2 + baseTime3));
         var targetTime1 = baseTime1 + value1.getAllowanceTime(baseTime1, rangesTransitions[1] - rangesTransitions[0]);
         var targetTime2 = baseTime2 + value2.getAllowanceTime(baseTime2, rangesTransitions[2] - rangesTransitions[1]);
         var targetTime3 = baseTime3 + value3.getAllowanceTime(baseTime3, rangesTransitions[3] - rangesTransitions[2]);
@@ -237,7 +238,7 @@ public class AllowanceRangesTests {
         var baseTime1 = maxEffortEnvelope.getTimeBetween(rangesTransitions[0], rangesTransitions[1]);
         var baseTime2 = maxEffortEnvelope.getTimeBetween(rangesTransitions[1], rangesTransitions[2]);
         var totalBaseTime = maxEffortEnvelope.getTotalTime();
-        assertEquals(totalBaseTime, baseTime1 + baseTime2, .001);
+        assertTrue(areTimesEqual(totalBaseTime, baseTime1 + baseTime2));
         var targetTime1 = baseTime1 + value1.getAllowanceTime(baseTime1, rangesTransitions[1] - rangesTransitions[0]);
         var targetTime2 = baseTime2 + value2.getAllowanceTime(baseTime2, rangesTransitions[2] - rangesTransitions[1]);
         var marginTime1 = marecoEnvelope.getTimeBetween(rangesTransitions[0], rangesTransitions[1]);
@@ -280,7 +281,7 @@ public class AllowanceRangesTests {
         var baseTime2 = maxEffortEnvelope.getTimeBetween(rangesTransitions[1], rangesTransitions[2]);
         var baseTime3 = maxEffortEnvelope.getTimeBetween(rangesTransitions[2], rangesTransitions[3]);
         var totalBaseTime = maxEffortEnvelope.getTotalTime();
-        assertEquals(totalBaseTime, baseTime1 + baseTime2 + baseTime3, .001);
+        assertTrue(areTimesEqual(totalBaseTime, baseTime1 + baseTime2 + baseTime3));
         var targetTime1 = baseTime1 + value1.getAllowanceTime(baseTime1, rangesTransitions[1] - rangesTransitions[0]);
         var targetTime2 = baseTime2 + value2.getAllowanceTime(baseTime2, rangesTransitions[2] - rangesTransitions[1]);
         var targetTime3 = baseTime3 + value3.getAllowanceTime(baseTime3, rangesTransitions[3] - rangesTransitions[2]);
