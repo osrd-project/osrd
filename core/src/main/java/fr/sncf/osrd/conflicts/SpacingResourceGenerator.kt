@@ -284,6 +284,9 @@ class SpacingRequirementAutomaton(
             pendingSignals.removeFirst()
             nextProbedZoneForSignal = -1
         }
+        if (incrementalPath.pathComplete) {
+            emitRequirementsUntil(incrementalPath.endZonePathIndex, Double.POSITIVE_INFINITY)
+        }
         return res
     }
 }
