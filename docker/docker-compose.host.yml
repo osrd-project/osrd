@@ -10,6 +10,14 @@ services:
   redis:
     ports: []
     network_mode: host
+  
+  minio:
+    ports: []
+    network_mode: host
+
+  rabbitmq:
+    ports: []
+    network_mode: host
 
   core:
     ports: []
