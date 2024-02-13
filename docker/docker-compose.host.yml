@@ -19,11 +19,9 @@ services:
     ports: []
     network_mode: host
 
-  core:
+  core_controller:
     ports: []
     network_mode: host
-    environment:
-      CORE_EDITOAST_URL: "http://localhost:8090"
 
   editoast:
     ports: []

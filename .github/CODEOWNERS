@@ -25,6 +25,9 @@
 # --- CORE ---
 /core                                                    @osrd-project/core-maintainers
 
+# --- CORE CONTROLLER ---
+/core_controller                                         @osrd-project/devops
+
 # --- CORE PHYSICS ---
 /core/*Physics*.java                                     @osrd-project/physics
 /core/*Integration*.java                                 @osrd-project/physics

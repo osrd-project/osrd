@@ -1,0 +1,6 @@
+[package]
+name = "osrd_core_controller"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
