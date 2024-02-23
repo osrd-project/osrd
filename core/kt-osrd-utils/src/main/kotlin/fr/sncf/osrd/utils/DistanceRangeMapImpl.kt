@@ -59,9 +59,7 @@ data class DistanceRangeMapImpl<T>(
         var start: Distance? = null
         for ((bound, index) in boundEntries) {
             // Update relevant entries. PriorityQueue only guarantees linear time for contains and
-            // remove,
-            // an
-            // optimized heap could be helpful.
+            // remove, an optimized heap could be helpful.
             if (entryQueue.contains(index)) entryQueue.remove(index) else entryQueue.add(index)
 
             // Get the latest relevant entry.

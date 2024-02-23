@@ -298,4 +298,87 @@ class TestDistanceRangeMap {
         assert(!mark2.hasPassedNow())
         assertEquals(mergedEntries, rangeMap.asList())
     }
+
+    @Test
+    fun testDistanceRangeMapSameValuePutManyIsManyPut() {
+        val rangeMapPut =
+            distanceRangeMapOf(
+                listOf(
+                    DistanceRangeMap.RangeMapEntry(Distance(0), Distance(1), 1),
+                )
+            )
+        val rangeMapPutMany = rangeMapPut.clone()
+        val incomingElement =
+            DistanceRangeMap.RangeMapEntry(Distance(1), Distance(2), 1)
+        rangeMapPut.put(incomingElement.lower, incomingElement.upper, incomingElement.value)
+        rangeMapPutMany.putMany(listOf( incomingElement))
+
+        val expectedRangeMap = distanceRangeMapOf(
+            listOf(
+                DistanceRangeMap.RangeMapEntry(Distance(0), Distance(2), 1),
+            )
+        )
+        assertEquals(expectedRangeMap, rangeMapPut)
+        assertEquals(expectedRangeMap, rangeMapPutMany)
+    }
+
+    @Test
+    fun testDistanceRangeMapSameValuePutManyBoundOverlap() {
+        val rangeMapPutManyBoundOverlap =
+            distanceRangeMapOf(
+                listOf(
+                    DistanceRangeMap.RangeMapEntry(Distance(3), Distance(7), 1),
+                )
+            )
+        val rangeMapPutManyNoBoundOverlap =
+            distanceRangeMapOf(
+                listOf(
+                    DistanceRangeMap.RangeMapEntry(Distance(3), Distance(4), 1),
+                )
+            )
+        val incomingMap =
+            listOf(
+                DistanceRangeMap.RangeMapEntry(Distance(0), Distance(5), 1),
+                DistanceRangeMap.RangeMapEntry(Distance(5), Distance(10), 1),
+            )
+        rangeMapPutManyBoundOverlap.putMany(incomingMap)
+        rangeMapPutManyNoBoundOverlap.putMany(incomingMap)
+
+        val expectedRangeMap = distanceRangeMapOf(
+            listOf(
+                DistanceRangeMap.RangeMapEntry(Distance(0), Distance(10), 1),
+            )
+        )
+        assertEquals(expectedRangeMap, rangeMapPutManyBoundOverlap)
+        assertEquals(expectedRangeMap, rangeMapPutManyNoBoundOverlap)
+    }
+
+    @Test
+    fun testDistanceRangeMapSameValueSeparatedByEmptyRange() {
+        val rangeMapPut =
+            distanceRangeMapOf(
+                listOf(
+                    DistanceRangeMap.RangeMapEntry(Distance(0), Distance(1), 1),
+                )
+            )
+        val rangeMapPutMany = rangeMapPut.clone()
+
+        val incomingEmptyElement =
+            DistanceRangeMap.RangeMapEntry(Distance(1), Distance(1), 2)
+        rangeMapPut.put(incomingEmptyElement.lower, incomingEmptyElement.upper, incomingEmptyElement.value)
+        rangeMapPutMany.putMany(listOf( incomingEmptyElement))
+
+        val incomingMeaningfullElement =
+            DistanceRangeMap.RangeMapEntry(Distance(1), Distance(2), 1)
+        rangeMapPut.put(incomingMeaningfullElement.lower, incomingMeaningfullElement.upper, incomingMeaningfullElement.value)
+        rangeMapPutMany.putMany(listOf( incomingMeaningfullElement))
+
+        val expectedRangeMap = distanceRangeMapOf(
+            listOf(
+                DistanceRangeMap.RangeMapEntry(Distance(0), Distance(2), 1),
+            )
+        )
+        assertEquals(expectedRangeMap, rangeMapPut)
+        assertEquals(expectedRangeMap, rangeMapPutMany)
+    }
 }
