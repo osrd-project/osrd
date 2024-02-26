@@ -3,7 +3,6 @@ import { point, Position, featureCollection, lineString } from '@turf/helpers';
 import length from '@turf/length';
 import bearing from '@turf/bearing';
 
-// eslint-disable-next-line import/prefer-default-export
 export function getTangent(
   tangentPoint: Position,
   line: Feature<LineString>

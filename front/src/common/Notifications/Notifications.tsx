@@ -32,7 +32,6 @@ const NotificationWrapper: FC<Notification> = (notif) => {
     return () => {
       clearTimer();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

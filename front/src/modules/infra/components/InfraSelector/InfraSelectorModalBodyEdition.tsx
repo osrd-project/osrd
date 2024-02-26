@@ -127,11 +127,10 @@ const InfraSelectorModalBodyEdition = ({
           <div className="infra-add-import">
             {selectedFile ? (
               <>
-                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                <label className="infra-add-import-input-file with-file">
+                <label htmlFor="fileInput" className="infra-add-import-input-file with-file">
                   <VscJson />
                   <span className="ml-2">{selectedFile.name}</span>
-                  <input type="file" onChange={handleSelect} accept=".json" />
+                  <input id="fileInput" type="file" onChange={handleSelect} accept=".json" />
                 </label>
                 <button
                   type="button"
@@ -143,14 +142,13 @@ const InfraSelectorModalBodyEdition = ({
               </>
             ) : (
               <>
-                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                <label className="infra-add-import-input-file">
+                <label htmlFor="fileInput" className="infra-add-import-input-file">
                   <VscJson />
                   <span className="flex-grow-1 text-center">
                     {t('infraManagement:addInfraJSONFile')}
                   </span>
-                  <input type="file" onChange={handleSelect} accept=".json" />
                 </label>
+                <input id="fileInput" type="file" onChange={handleSelect} accept=".json" />
               </>
             )}
           </div>

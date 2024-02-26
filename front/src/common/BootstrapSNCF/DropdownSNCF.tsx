@@ -70,8 +70,7 @@ const DropdownSNCF: FC<{
             <div ref={ref as LegacyRef<HTMLDivElement>}>
               <div
                 ref={targetRef}
-                // eslint-disable-next-line react/no-unknown-property
-                x-placement="bottom-end"
+                data-placement="bottom-end"
                 className="dropdown-menu dropdown-menu-right show d-block position-static"
               >
                 <ul className="dropdown-menu-list">{itemNode}</ul>

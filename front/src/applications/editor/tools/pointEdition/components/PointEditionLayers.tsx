@@ -15,7 +15,7 @@ import EditorContext from 'applications/editor/context';
 import EntitySumUp from 'applications/editor/components/EntitySumUp';
 import { NEW_ENTITY_ID, cleanSymbolType, flattenEntity } from 'applications/editor/data/utils';
 import type { ExtendedEditorContextType } from 'applications/editor/types';
-import { POINT_LAYER_ID } from 'applications/editor/tools/pointEdition/consts';
+import POINT_LAYER_ID from 'applications/editor/tools/pointEdition/consts';
 import type { PointEditionState } from 'applications/editor/tools/pointEdition/types';
 import type { EditorEntity } from 'applications/editor/typesEditorEntity';
 

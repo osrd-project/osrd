@@ -1,4 +1,4 @@
-import { makeEnumBooleans } from 'utils/constants';
+import makeEnumBooleans from 'utils/constants';
 
 describe('makeEnumBooleans', () => {
   it('should return an empty object', () => {

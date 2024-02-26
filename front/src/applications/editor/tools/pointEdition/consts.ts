@@ -1,2 +1,3 @@
-// eslint-disable-next-line import/prefer-default-export
-export const POINT_LAYER_ID = 'pointEditionTool/new-entity';
+const POINT_LAYER_ID = 'pointEditionTool/new-entity';
+
+export default POINT_LAYER_ID;

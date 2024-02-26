@@ -32,7 +32,6 @@ const InfraSelector = ({ isInEditor }: InfraSelectorProps) => {
     if (infraID !== undefined) {
       getInfra(infraID);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [infraID]);
 
   return <InfraSelectorModal isInEditor={isInEditor} />;

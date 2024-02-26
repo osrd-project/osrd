@@ -23,7 +23,7 @@ import { approximateDistanceWithEditoastData } from 'applications/editor/tools/u
 
 import { PointEditionMessages, getPointEditionLeftPanel } from './components';
 import type { BufferStopEntity, DetectorEntity, PointEditionState, SignalEntity } from './types';
-import { POINT_LAYER_ID } from './consts';
+import POINT_LAYER_ID from './consts';
 
 type EditorPoint = BufferStopEntity | DetectorEntity | SignalEntity;
 type PointEditionToolParams<T extends EditorPoint> = {
@@ -265,7 +265,6 @@ function getPointEditionTool<T extends EditorPoint>({
           typeof computedPosition === 'number' &&
           Math.abs(dbPosition - computedPosition) >= 1
         ) {
-          // eslint-disable-next-line no-console
           console.warn(
             `
       The entity ${entity.properties.id} position computed by Turf.js does not match the one from the database:

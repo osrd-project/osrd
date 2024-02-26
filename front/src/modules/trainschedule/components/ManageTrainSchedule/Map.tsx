@@ -174,7 +174,6 @@ const Map = () => {
         pitch: parseFloat(urlPitch),
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

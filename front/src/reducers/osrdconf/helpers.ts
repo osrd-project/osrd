@@ -32,7 +32,6 @@ const computeNewOriginUpperBoundDate = (
  *
  * See tests for more examples.
  */
-// eslint-disable-next-line import/prefer-default-export
 export const computeLinkedOriginTimes = (
   originDate: string | undefined,
   originTime: string | undefined,

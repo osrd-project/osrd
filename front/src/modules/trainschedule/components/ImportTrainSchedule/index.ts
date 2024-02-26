@@ -1,4 +1,3 @@
-/* eslint-disable import/prefer-default-export */
 // eslint-disable-next-line import/no-cycle
 export { default as ImportTrainScheduleTrainsList } from 'modules/trainschedule/components/ImportTrainSchedule/ImportTrainScheduleTrainsList';
 export { default as ImportTrainScheduleModal } from 'modules/trainschedule/components/ImportTrainSchedule/ImportTrainScheduleModal';

@@ -97,7 +97,6 @@ function Map() {
     if (!isNil(urlPitch)) newViewport.pitch = parseFloat(urlPitch);
     if (Object.keys(newViewport).length > 0) updateViewportChange(newViewport);
     // we only do it at mount time
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

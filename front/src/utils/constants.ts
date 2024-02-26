@@ -1,7 +1,6 @@
 import { upperFirst, mapKeys } from 'lodash';
 
-// eslint-disable-next-line import/prefer-default-export
-export function makeEnumBooleans<T = symbol>(
+export default function makeEnumBooleans<T = symbol>(
   list: Record<string, T>,
   value: T | null
 ): Record<string, boolean> {

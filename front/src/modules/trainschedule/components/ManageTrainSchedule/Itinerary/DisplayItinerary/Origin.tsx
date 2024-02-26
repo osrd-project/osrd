@@ -5,7 +5,7 @@ import { RiMapPin2Fill } from 'react-icons/ri';
 import { BiLink, BiUnlink } from 'react-icons/bi';
 import type { Position } from 'geojson';
 
-import { makeEnumBooleans } from 'utils/constants';
+import makeEnumBooleans from 'utils/constants';
 
 import InputSNCF from 'common/BootstrapSNCF/InputSNCF';
 import { useOsrdConfActions, useOsrdContext, useOsrdConfSelectors } from 'common/osrdContext';

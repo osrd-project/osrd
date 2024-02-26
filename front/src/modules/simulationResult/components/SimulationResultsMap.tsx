@@ -187,7 +187,6 @@ const Map: FC<MapProps> = () => {
   const [interactiveLayerIds, setInteractiveLayerIds] = useState<string[]>([]);
   useEffect(() => {
     setInteractiveLayerIds(defineInteractiveLayers());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [geojsonPath, otherTrainsHoverPosition.length]);
   useEffect(() => {
     if (mapRef.current) {
@@ -202,8 +201,6 @@ const Map: FC<MapProps> = () => {
         });
       }
     }
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -214,7 +211,6 @@ const Map: FC<MapProps> = () => {
       );
       if (foundTrain) getGeoJSONPath(foundTrain.path);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTrain]);
 
   const handleLoadFinished = () => {

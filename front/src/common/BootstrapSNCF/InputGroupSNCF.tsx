@@ -176,8 +176,7 @@ export default function InputGroupSNCF({
                 isDropdownShown && 'show'
               )}
               id={id}
-              // eslint-disable-next-line react/no-unknown-property
-              x-placement="bottom-end"
+              data-placement="bottom-end"
             >
               {options.map((option) => (
                 <React.Fragment key={nextId()}>
@@ -208,7 +207,6 @@ export default function InputGroupSNCF({
         </div>
         {orientation === 'left' && inputField}
         {isDropdownShown && (
-          // eslint-disable-next-line jsx-a11y/control-has-associated-label
           <div
             style={{
               position: 'fixed',
@@ -221,6 +219,7 @@ export default function InputGroupSNCF({
             role="button"
             tabIndex={0}
             onClick={() => setIsDropdownShown(false)}
+            aria-label="Close dropdown"
           >
             &nbsp;
           </div>

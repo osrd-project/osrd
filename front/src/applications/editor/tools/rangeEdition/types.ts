@@ -4,7 +4,7 @@ import { Feature, LineString, Point, Position } from 'geojson';
 import type { EditorEntity } from 'applications/editor/typesEditorEntity';
 import { TrackRange, TrackSectionEntity } from 'applications/editor/tools/trackEdition/types';
 import { CommonToolState } from 'applications/editor/tools/types';
-import { APPLICABLE_DIRECTIONS } from './consts';
+import APPLICABLE_DIRECTIONS from './consts';
 
 export type ApplicableDirection = (typeof APPLICABLE_DIRECTIONS)[number];
 export type PSLSign = {

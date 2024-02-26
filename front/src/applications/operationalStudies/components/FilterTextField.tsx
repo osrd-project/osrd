@@ -24,7 +24,6 @@ export default function FilterTextField({ id, setFilter, sm = false, filterChips
 
   useEffect(() => {
     setFilter(debouncedFilter);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedFilter]);
 
   return (

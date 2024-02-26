@@ -8,8 +8,6 @@ import {
   OsrdSimulationState,
   Train,
 } from 'reducers/osrdsimulation/types';
-// TODO: Dependency cycle will be removed during the refactoring of store
-// eslint-disable-next-line import/no-cycle
 import undoableSimulation from './simulation';
 
 import {
@@ -54,7 +52,6 @@ export const initialState: OsrdSimulationState = {
   },
 };
 
-// eslint-disable-next-line default-param-last
 export default function reducer(inputState: OsrdSimulationState | undefined, action: AnyAction) {
   const state = inputState || initialState;
   return produce(state, (draft) => {

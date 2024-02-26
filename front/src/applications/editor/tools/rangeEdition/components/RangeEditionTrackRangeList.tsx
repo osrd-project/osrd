@@ -9,7 +9,7 @@ import { LoaderFill } from 'common/Loaders';
 
 import EditorContext from 'applications/editor/context';
 import EntitySumUp from 'applications/editor/components/EntitySumUp';
-import { APPLICABLE_DIRECTIONS } from 'applications/editor/tools/rangeEdition/consts';
+import APPLICABLE_DIRECTIONS from 'applications/editor/tools/rangeEdition/consts';
 import type {
   ApplicableDirection,
   ElectrificationEntity,

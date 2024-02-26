@@ -317,8 +317,7 @@ const TrackEditionTool: Tool<TrackEditionState> = {
       }
 
       if (candidates.length === 1) {
-        // eslint-disable-next-line prefer-destructuring
-        newState.nearestPoint = candidates[0];
+        [newState.nearestPoint] = candidates;
       } else if (candidates.length > 1) {
         newState.nearestPoint = getNearestPoint(e.lngLat.toArray(), featureCollection(candidates));
       } else if (nearestPoint) {

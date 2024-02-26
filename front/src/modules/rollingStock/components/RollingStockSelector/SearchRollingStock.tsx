@@ -173,7 +173,6 @@ const SearchRollingStock = ({
 
   useEffect(() => {
     updateSearch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, rollingStocks]);
 
   useEffect(() => {
