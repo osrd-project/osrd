@@ -17,17 +17,14 @@ const DropdownSNCF: FC<{
   const [isDropdownShown, setIsDropdownShown] = useState(false);
   const targetRef = useRef<HTMLDivElement>(null);
   const itemNode = items.map((item) => (
-    <li
+    <button
+      type="button"
       className="dropdown-item"
       key={`item-${nextId()}`}
-      // Make it better some day :-/
-      // eslint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role
-      role="button"
-      tabIndex={0}
       onClick={() => setIsDropdownShown(false)}
     >
       {item}
-    </li>
+    </button>
   ));
 
   useEffect(() => {

@@ -3,8 +3,7 @@ import * as d3 from 'd3';
 import { has, last, memoize } from 'lodash';
 
 import { datetime2time, durationInSeconds, sec2time } from 'utils/timeManipulation';
-// import/no-cycle is disabled because this func call will be removed by refacto
-// eslint-disable-next-line
+
 import {
   Position,
   PositionSpeedTime,

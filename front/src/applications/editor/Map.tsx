@@ -115,8 +115,6 @@ const MapUnplugged = ({
   return (
     <>
       <div
-        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
-        tabIndex={0}
         role="none"
         className="w-100 h-100"
         onKeyDown={(e) => {

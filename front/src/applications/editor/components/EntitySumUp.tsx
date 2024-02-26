@@ -126,14 +126,13 @@ function getSumUpContent(
       if (attrs.line_name) subtexts.unshift(attrs.line_name);
       break;
     }
-    // @ts-expect-error: Here we only deal with the installation_type, the rest is handled with BufferStop and Detector.
     case 'Signal': {
       const signal = entity as SignalEntity;
       if (signal.properties.extensions.sncf.installation_type) {
         type += ` - ${signal.properties.extensions.sncf.installation_type}`;
       }
+      break;
     }
-    // eslint-disable-next-line no-fallthrough
     case 'BufferStop':
     case 'Detector': {
       // This cast is OK since both buffer stops and detectors have same

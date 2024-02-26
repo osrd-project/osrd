@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { onlyDigit } from 'utils/strings';
 
@@ -18,6 +18,7 @@ const ChartModal = ({
 }: ChartModalProsp) => {
   const { t } = useTranslation(['simulation']);
   const [offset, setOffset] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const sendOffset = ({ key }: { key: string }) => {
     if (key === 'Enter') {
@@ -34,6 +35,12 @@ const ChartModal = ({
     };
   }, [offset]);
 
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
+
   return (
     <div className="osrd-simulation-chart-modal">
       <div className="chart-modal-box">
@@ -45,8 +52,7 @@ const ChartModal = ({
           <div className="chart-modal-type-label">{modificationKey}</div>
           <input
             type="string"
-            // eslint-disable-next-line jsx-a11y/no-autofocus
-            autoFocus
+            ref={inputRef}
             onBlur={() => setShowModal('')}
             onChange={(e) => setOffset(onlyDigit(e.target.value))} // Filter non digit chars
             value={offset}
