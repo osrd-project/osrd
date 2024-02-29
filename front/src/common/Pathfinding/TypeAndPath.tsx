@@ -71,6 +71,7 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
 
   const [searchResults, setSearchResults] = useState<SearchResultItemOperationalPoint[]>([]);
   const [searchState, setSearch] = useState('');
+  const mainOperationalPointsCHCodes = ['', '00', 'BV'];
   const inputRef = useRef<HTMLInputElement>(null);
 
   const debouncedSearchTerm = useDebounce(searchState, 300);
@@ -100,7 +101,10 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
     })
       .unwrap()
       .then((results) => {
-        setSearchResults(results as SearchResultItemOperationalPoint[]);
+        const filteredResults = results.filter((result) =>
+          mainOperationalPointsCHCodes.includes((result as SearchResultItemOperationalPoint).ch)
+        );
+        setSearchResults(filteredResults as SearchResultItemOperationalPoint[]);
       })
       .catch(() => {
         setSearchResults([]);
@@ -182,7 +186,7 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
   useEffect(() => {
     if (debouncedSearchTerm) {
       searchOperationalPoints();
-    } else if (searchResults.length !== 0) {
+    } else if (searchResults.length) {
       setSearchResults([]);
     }
   }, [debouncedSearchTerm]);
@@ -196,8 +200,7 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
   }, [debouncedInputText]);
 
   useEffect(() => {
-    const averageCharWidthRem = 0.5;
-    const cursorPositionRem = cursorIndex * averageCharWidthRem;
+    const cursorPositionRem = cursorIndex * 0.5;
     document.documentElement.style.setProperty('--cursor-position', `${cursorPositionRem}rem`);
   }, [cursorIndex]);
 
@@ -241,22 +244,24 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
           </button>
         </div>
       </div>
-      {searchResults.length > 0 && <span className="arrow-img"> </span>}
       {searchResults.length > 0 && (
-        <div className="station-result list-group-item border-0 p-0 pl-2">
-          {searchResults.map((result) => (
-            <button
-              id={`trigram-button-${result.name}`}
-              type="button"
-              onClick={() => onResultClick(result)}
-              key={result.obj_id}
-              className="badge bg-coolgray7 text-coolgray13 m-1 border-0 p-1"
-              title={result.name}
-            >
-              <span className="badge-text text-secondary">{result.name}</span>
-            </button>
-          ))}
-        </div>
+        <>
+          <span className="arrow-img"> </span>
+          <div className="station-result list-group-item border-0 p-0 pl-2">
+            {searchResults.map((result) => (
+              <button
+                id={`trigram-button-${result.name}`}
+                type="button"
+                onClick={() => onResultClick(result)}
+                key={result.obj_id}
+                className="badge bg-coolgray7 text-coolgray13 m-1 border-0 p-1"
+                title={`${result.name} ${result.ch}`}
+              >
+                <span className="badge-text text-secondary">{result.name}</span>
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </>
   );
