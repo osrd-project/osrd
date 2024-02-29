@@ -1,5 +1,6 @@
 /* eslint-disable jsx-a11y/no-autofocus */
-import React, { useEffect, useMemo, useState } from 'react';
+
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Alert, TriangleRight } from '@osrd-project/ui-icons';
 import bbox from '@turf/bbox';
@@ -68,10 +69,42 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
   const { t } = useTranslation('operationalStudies/manageTrainSchedule');
   const osrdActions = useOsrdConfActions();
 
+  const [searchResults, setSearchResults] = useState<SearchResultItemOperationalPoint[]>([]);
+  const [searchState, setSearch] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const debouncedSearchTerm = useDebounce(searchState, 300);
   const debouncedInputText = useDebounce(inputText.trimEnd(), 500);
+
+  const activeElement = document.activeElement as HTMLInputElement;
+  const cursorIndex = activeElement.selectionStart || 0;
 
   const handleInput = (text: string) => {
     setInputText(text.trimStart());
+    const lastSpaceIndex = text.lastIndexOf(' ', cursorIndex);
+    const searchText = text.substring(lastSpaceIndex, cursorIndex + 1).trim();
+    setSearch(searchText);
+  };
+
+  const searchOperationalPoints = async () => {
+    const searchQuery = ['or', ['search', ['name'], debouncedSearchTerm]];
+
+    const payload = {
+      object: 'operationalpoint',
+      query: ['and', searchQuery, infraId !== undefined ? ['=', ['infra_id'], infraId] : true],
+    };
+
+    await postSearch({
+      searchPayload: payload,
+      pageSize: 101,
+    })
+      .unwrap()
+      .then((results) => {
+        setSearchResults(results as SearchResultItemOperationalPoint[]);
+      })
+      .catch(() => {
+        setSearchResults([]);
+      });
   };
 
   function getOpNames() {
@@ -138,6 +171,22 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
     }
   }
 
+  const onResultClick = (result: SearchResultItemOperationalPoint) => {
+    const newText = inputText.replace(searchState, result.trigram);
+
+    setInputText(newText);
+    setSearch('');
+    if (inputRef.current) inputRef.current.focus();
+  };
+
+  useEffect(() => {
+    if (debouncedSearchTerm) {
+      searchOperationalPoints();
+    } else if (searchResults.length !== 0) {
+      setSearchResults([]);
+    }
+  }, [debouncedSearchTerm]);
+
   useEffect(() => {
     if (debouncedInputText !== '') {
       getOpNames();
@@ -146,43 +195,69 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
     }
   }, [debouncedInputText]);
 
+  useEffect(() => {
+    const averageCharWidthRem = 0.5;
+    const cursorPositionRem = cursorIndex * averageCharWidthRem;
+    document.documentElement.style.setProperty('--cursor-position', `${cursorPositionRem}rem`);
+  }, [cursorIndex]);
+
   return (
-    <div
-      className="type-and-path"
-      style={{ minWidth: `${monospaceOneCharREMWidth * inputText.length + 5.5}rem` }} // To grow input field & whole div along text size
-      data-testid="type-and-path-container"
-    >
-      <div className="help">{opList.length === 0 && t('inputOPTrigrams')}</div>
-      <OpTooltips opList={opList} />
-      <div className="d-flex align-items-center">
-        <div
-          className={cx('form-control-container', 'flex-grow-1', 'mr-2', {
-            'is-invalid': isInvalid,
-          })}
-        >
-          <input
-            className="form-control form-control-sm text-zone"
-            type="text"
-            value={inputText}
-            onChange={(e) => handleInput(e.target.value)}
-            placeholder={t('inputOPTrigramsExample')}
-            autoFocus
-            data-testid="type-and-path-input"
-          />
-          <span className="form-control-state" />
+    <>
+      <div
+        className="type-and-path mb-2"
+        style={{ minWidth: `${monospaceOneCharREMWidth * inputText.length + 5.5}rem` }} // To grow input field & whole div along text size
+        data-testid="type-and-path-container"
+      >
+        <div className="help">{opList.length === 0 && t('inputOPTrigrams')}</div>
+        <OpTooltips opList={opList} />
+        <div className="d-flex align-items-center">
+          <div
+            className={cx('form-control-container', 'flex-grow-1', 'mr-2', {
+              'is-invalid': isInvalid,
+            })}
+          >
+            <input
+              ref={inputRef}
+              className="form-control form-control-sm text-zone"
+              type="text"
+              value={inputText}
+              onChange={(e) => handleInput(e.target.value)}
+              placeholder={t('inputOPTrigramsExample')}
+              autoFocus
+              data-testid="type-and-path-input"
+            />
+            <span className="form-control-state" />
+          </div>
+          <button
+            className="btn btn-sm btn-success"
+            type="button"
+            aria-label={t('launchPathFinding')}
+            title={t('launchPathFinding')}
+            onClick={launchPathFinding}
+            disabled={isInvalid || opList.length < 2}
+            data-testid="submit-search-by-trigram"
+          >
+            <TriangleRight />
+          </button>
         </div>
-        <button
-          className="btn btn-sm btn-success"
-          type="button"
-          aria-label={t('launchPathFinding')}
-          title={t('launchPathFinding')}
-          onClick={launchPathFinding}
-          disabled={isInvalid || opList.length < 2}
-          data-testid="submit-search-by-trigram"
-        >
-          <TriangleRight />
-        </button>
       </div>
-    </div>
+      {searchResults.length > 0 && <span className="arrow-img"> </span>}
+      {searchResults.length > 0 && (
+        <div className="station-result list-group-item border-0 p-0 pl-2">
+          {searchResults.map((result) => (
+            <button
+              id={`trigram-button-${result.name}`}
+              type="button"
+              onClick={() => onResultClick(result)}
+              key={result.obj_id}
+              className="badge bg-coolgray7 text-coolgray13 m-1 border-0 p-1"
+              title={result.name}
+            >
+              <span className="badge-text text-secondary">{result.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </>
   );
 }

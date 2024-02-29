@@ -1,5 +1,6 @@
 .type-and-path {
   position: relative;
+  max-width: 100%;
 
   background-color: var(--white);
   padding: 0.5rem;
@@ -73,4 +74,41 @@
       font-size: 0.9rem;
     }
   }
+}
+
+.station-result {
+  position: relative;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  flex-grow: 0;
+  flex-wrap: nowrap;
+  max-height: 3.75rem;
+  background-color: white;
+  z-index: 3;
+
+  .badge {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 30%;
+    border-radius: 0.3rem;
+    &-text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 0.8rem;
+    }
+  }
+}
+
+.arrow-img::before {
+  content: '';
+  position: absolute;
+  bottom: 45%;
+  left: var(--cursor-position);
+  border-left: 1.2rem solid transparent;
+  border-right: 1.2rem solid transparent;
+  border-bottom: 1.5rem solid white;
+  z-index: 4;
 }
