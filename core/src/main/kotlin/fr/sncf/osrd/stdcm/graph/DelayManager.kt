@@ -7,6 +7,7 @@ import fr.sncf.osrd.stdcm.preprocessing.interfaces.BlockAvailabilityInterface
 import fr.sncf.osrd.stdcm.preprocessing.interfaces.BlockAvailabilityInterface.Availability
 import fr.sncf.osrd.utils.units.Distance.Companion.fromMeters
 import fr.sncf.osrd.utils.units.Offset
+import fr.sncf.osrd.utils.withContext
 import java.util.*
 
 /**
@@ -124,11 +125,21 @@ internal constructor(
         val startOffsetOnPath =
             startOffset + explorerWithNewEnvelope.getPredecessorLength().distance
         val endOffsetOnPath = startOffsetOnPath + (endOffset - startOffset)
-        return blockAvailability.getAvailability(
-            explorerWithNewEnvelope,
-            startOffsetOnPath.cast(),
-            endOffsetOnPath.cast(),
-            startTime
-        )
+        return withContext(
+            "get-availability",
+            extraContext =
+                mapOf(
+                    Pair("block", explorerWithNewEnvelope.getCurrentBlock()),
+                    Pair("lookahead", explorerWithNewEnvelope.getLookahead()),
+                    Pair("time", startTime),
+                )
+        ) {
+            blockAvailability.getAvailability(
+                explorerWithNewEnvelope,
+                startOffsetOnPath.cast(),
+                endOffsetOnPath.cast(),
+                startTime
+            )
+        }
     }
 }

@@ -9,6 +9,7 @@ import fr.sncf.osrd.stdcm.preprocessing.interfaces.BlockAvailabilityInterface
 import fr.sncf.osrd.train.TrainStop
 import fr.sncf.osrd.utils.units.Offset
 import fr.sncf.osrd.utils.units.meters
+import fr.sncf.osrd.utils.withContext
 import java.util.*
 import kotlin.math.min
 
@@ -272,47 +273,58 @@ internal constructor(
 
     /** Creates a single STDCM edge, adding the given amount of delay */
     private fun makeSingleEdge(delayNeeded: Double): STDCMEdge? {
-        if (java.lang.Double.isInfinite(delayNeeded)) return null
-        val endStopDuration = getEndStopDuration()
-        val maximumDelay =
-            min(
-                prevMaximumAddedDelay - delayNeeded,
-                graph.delayManager.findMaximumAddedDelay(
-                    getExplorerWithNewEnvelope()!!,
-                    startTime + delayNeeded,
-                    startOffset,
-                    envelope!!,
+        return withContext(
+            "new-edge",
+            extraContext =
+                mapOf(
+                    Pair("block", infraExplorer.getCurrentBlock()),
+                    Pair("lookahead", infraExplorer.getLookahead()),
+                    Pair("time", startTime),
                 )
-            )
-        val actualStartTime = startTime + delayNeeded
-        val endAtStop = endStopDuration != null
-        var res: STDCMEdge? =
-            STDCMEdge(
-                infraExplorer,
-                envelope!!,
-                getExplorerWithNewEnvelope()!!,
-                actualStartTime,
-                maximumDelay,
-                delayNeeded,
-                graph.delayManager.findNextOccupancy(
-                    getExplorerWithNewEnvelope()!!,
-                    startTime + delayNeeded,
-                    startOffset,
+        ) {
+            if (java.lang.Double.isInfinite(delayNeeded)) return@withContext null
+            val endStopDuration = getEndStopDuration()
+            val maximumDelay =
+                min(
+                    prevMaximumAddedDelay - delayNeeded,
+                    graph.delayManager.findMaximumAddedDelay(
+                        getExplorerWithNewEnvelope()!!,
+                        startTime + delayNeeded,
+                        startOffset,
+                        envelope!!,
+                    )
+                )
+            val actualStartTime = startTime + delayNeeded
+            val endAtStop = endStopDuration != null
+            var res: STDCMEdge? =
+                STDCMEdge(
+                    infraExplorer,
                     envelope!!,
-                ),
-                prevAddedDelay + delayNeeded,
-                prevNode,
-                startOffset,
-                (actualStartTime / 60).toInt(),
-                graph.getStandardAllowanceSpeedRatio(envelope!!),
-                waypointIndex,
-                endAtStop
-            )
-        if (res!!.maximumAddedDelayAfter < 0)
-            res = graph.allowanceManager.tryEngineeringAllowance(res)
-        if (res == null) return null
-        res = graph.backtrackingManager.backtrack(res)
-        return if (res == null || graph.delayManager.isRunTimeTooLong(res)) null else res
+                    getExplorerWithNewEnvelope()!!,
+                    actualStartTime,
+                    maximumDelay,
+                    delayNeeded,
+                    graph.delayManager.findNextOccupancy(
+                        getExplorerWithNewEnvelope()!!,
+                        startTime + delayNeeded,
+                        startOffset,
+                        envelope!!,
+                    ),
+                    prevAddedDelay + delayNeeded,
+                    prevNode,
+                    startOffset,
+                    (actualStartTime / 60).toInt(),
+                    graph.getStandardAllowanceSpeedRatio(envelope!!),
+                    waypointIndex,
+                    endAtStop
+                )
+            if (res!!.maximumAddedDelayAfter < 0)
+                res = graph.allowanceManager.tryEngineeringAllowance(res)
+            if (res == null) return@withContext null
+            res = graph.backtrackingManager.backtrack(res)
+            return@withContext if (res == null || graph.delayManager.isRunTimeTooLong(res)) null
+            else res
+        }
     }
 
     /** Returns true if the current block is already present in the path to this edge */

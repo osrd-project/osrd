@@ -11,6 +11,7 @@ import fr.sncf.osrd.sim_infra.api.Path
 import fr.sncf.osrd.standalone_sim.result.ResultTrain.SpacingRequirement
 import fr.sncf.osrd.stdcm.preprocessing.interfaces.BlockAvailabilityInterface
 import fr.sncf.osrd.utils.AppendOnlyLinkedList
+import fr.sncf.osrd.utils.log
 import fr.sncf.osrd.utils.units.Distance
 import fr.sncf.osrd.utils.units.Length
 import fr.sncf.osrd.utils.units.Offset
@@ -70,7 +71,11 @@ data class InfraExplorerWithEnvelopeImpl(
 
     override fun getSpacingRequirements(): List<SpacingRequirement> {
         val cached = spacingRequirementsCache?.get()
-        if (cached != null) return cached
+        if (cached != null) {
+            log("cache-hit")
+            return cached
+        }
+        log("cache-miss")
         spacingRequirementAutomaton.incrementalPath = getIncrementalPath()
         // Path is complete and has been completely simulated
         val simulationComplete = getIncrementalPath().pathComplete && getLookahead().size == 0

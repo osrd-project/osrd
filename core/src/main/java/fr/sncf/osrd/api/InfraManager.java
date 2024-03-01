@@ -212,7 +212,7 @@ public class InfraManager extends APIClient {
         try {
             var cacheEntry = infraCache.get(infraId);
             if (cacheEntry == null || !cacheEntry.status.isStable) {
-                if (loadIfMissing) {
+                if (true) {
                     // download the infra for tests
                     return load(infraId, expectedVersion, diagnosticRecorder);
                 } else throw new OSRDError(ErrorType.InfraNotLoadedException);

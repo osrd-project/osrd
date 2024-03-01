@@ -4,6 +4,8 @@ import fr.sncf.osrd.envelope.Envelope
 import fr.sncf.osrd.envelope_sim.EnvelopeSimContext
 import fr.sncf.osrd.envelope_sim.TrainPhysicsIntegrator
 import fr.sncf.osrd.sim_infra.api.BlockId
+import fr.sncf.osrd.utils.log
+import fr.sncf.osrd.utils.units.meters
 import java.util.*
 
 /**
@@ -22,6 +24,14 @@ class AllowanceManager(private val graph: STDCMGraph) {
         val affectedEdges = findAffectedEdges(oldEdge.previousNode.previousEdge, oldEdge.addedDelay)
         if (affectedEdges.isEmpty()) return null // No space to try the allowance
         val context = makeAllowanceContext(affectedEdges)
+        log(
+            "engineering-allowance",
+            extraContext =
+                mapOf(
+                    Pair("allowance-length", context.path.length.meters),
+                    Pair("allowance-extra-time", neededDelay),
+                )
+        )
         val oldEnvelope = mergeEnvelopes(graph, affectedEdges, context)
         val newEnvelope = findEngineeringAllowance(context, oldEnvelope, neededDelay) ?: return null
         // We couldn't find an envelope
