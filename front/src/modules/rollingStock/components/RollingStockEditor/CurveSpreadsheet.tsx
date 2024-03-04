@@ -1,10 +1,15 @@
-import React, { type Dispatch, type SetStateAction, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 
+import { DataSheetGrid, keyColumn, intColumn, floatColumn } from 'react-datasheet-grid';
+import 'react-datasheet-grid/dist/style.css';
 import { useTranslation } from 'react-i18next';
-import Spreadsheet, { createEmptyMatrix } from 'react-spreadsheet';
-import type { CellBase, Matrix } from 'react-spreadsheet';
 
-import type { ConditionalEffortCurveForm, EffortCurveForms } from 'modules/rollingStock/types';
+import type {
+  ConditionalEffortCurveForm,
+  DataSheetCurve,
+  EffortCurveForms,
+} from 'modules/rollingStock/types';
 import { replaceElementAtIndex } from 'utils/array';
 import { msToKmh } from 'utils/physics';
 
@@ -30,45 +35,37 @@ const CurveSpreadsheet = ({
   isDefaultCurve,
 }: CurveSpreadsheetProps) => {
   const { t } = useTranslation('rollingstock');
+  const columns = [
+    { ...keyColumn('speed', intColumn), title: t('speed') },
+    { ...keyColumn('effort', floatColumn), title: t('effort') },
+  ];
 
-  const spreadsheetCurve = useMemo(() => {
-    const { speeds, max_efforts } = selectedCurve.curve;
-    const filledMatrix: (
-      | {
-          value: string;
-        }
-      | undefined
-    )[][] =
-      speeds && max_efforts
-        ? max_efforts.map((effort, index) => [
-            {
-              value:
-                speeds[index] !== undefined ? Math.round(msToKmh(speeds[index]!)).toString() : '',
-            },
-            // Effort needs to be displayed in kN
-            { value: effort !== undefined ? Math.round(effort / 1000).toString() : '' },
-          ])
-        : [];
-    const numberOfRows = filledMatrix.length < 8 ? 8 - filledMatrix.length : 1;
-    return filledMatrix.concat(createEmptyMatrix<CellBase<string>>(numberOfRows, 2));
-  }, [selectedCurve]);
+  const [needsSort, setNeedsSort] = useState<boolean>(false);
 
-  const updateRollingStockCurve = (e: Matrix<{ value: string }>) => {
+  const handleBlur = () => {
+    setNeedsSort(true);
+  };
+
+  const updateRollingStockCurve = (newCurve: DataSheetCurve[]) => {
     if (!selectedTractionMode || !effortCurves) return;
-    const formattedCurve = formatCurve(e);
 
+    // Format the new curve
+    const formattedCurve = formatCurve(newCurve);
+
+    // Create the updated selected curve
     const updatedSelectedCurve = {
       ...selectedCurve,
       curve: formattedCurve,
     };
 
-    // replace the updated curve
+    // Replace the updated curve in the selected traction mode curves
     const updatedCurves = replaceElementAtIndex(
       selectedTractionModeCurves,
       selectedCurveIndex,
       updatedSelectedCurve
     );
 
+    // Update the effort curves
     const updatedEffortCurve = {
       ...effortCurves,
       [selectedTractionMode]: {
@@ -77,30 +74,51 @@ const CurveSpreadsheet = ({
         ...(isDefaultCurve ? { default_curve: formattedCurve } : {}),
       },
     };
+
+    // Set the updated effort curves
     setEffortCurves(updatedEffortCurve);
   };
 
-  const orderSpreadsheetValues = () => {
-    const orderedValuesByVelocity = spreadsheetCurve.sort((a, b) => {
-      // if a row has a max_effort, but no speed, it should appear at the top of the table
-      if (b[0] && b[0].value === '') return 1;
-      return Number(a[0]?.value) - Number(b[0]?.value);
-    });
-    updateRollingStockCurve(orderedValuesByVelocity);
-  };
+  const spreadsheetCurve = useMemo(() => {
+    const { speeds, max_efforts } = selectedCurve.curve;
+    const filledDataSheet =
+      speeds && max_efforts
+        ? max_efforts.map((effort, index) => ({
+            speed: speeds[index] !== undefined ? Math.round(msToKmh(speeds[index]!)) : '',
+            // Effort needs to be displayed in kN
+            effort: effort !== undefined ? effort / 1000 : '',
+          }))
+        : [];
+    return filledDataSheet;
+  }, [selectedCurve]);
+
+  useEffect(() => {
+    if (needsSort) {
+      const sortedSpreadsheetValues = spreadsheetCurve
+        .filter((item) => item.speed !== null || item.effort !== null)
+        .sort((a, b) => {
+          if (a.speed === null && b.speed === null) return 0;
+          if (a.speed === null) return 1;
+          if (b.speed === null) return -1;
+          return Number(a.speed) - Number(b.speed);
+        });
+
+      updateRollingStockCurve(sortedSpreadsheetValues);
+      setNeedsSort(false);
+    }
+  }, [needsSort]);
 
   return (
     <div className="rollingstock-editor-spreadsheet">
-      <Spreadsheet
-        data={spreadsheetCurve}
-        onChange={(e) => {
-          updateRollingStockCurve(e);
-        }}
-        onBlur={orderSpreadsheetValues}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') orderSpreadsheetValues();
-        }}
-        columnLabels={[t('speed'), t('effort')]}
+      <DataSheetGrid
+        value={spreadsheetCurve}
+        columns={columns}
+        onChange={(e) => updateRollingStockCurve(e as DataSheetCurve[])}
+        autoAddRow
+        rowHeight={30}
+        addRowsComponent={false}
+        onBlur={handleBlur}
+        onSelectionChange={handleBlur}
       />
     </div>
   );
