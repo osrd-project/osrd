@@ -88,6 +88,9 @@ pub enum PathfindingResult {
         path_item: PathItemLocation,
     },
     NotEnoughPathItems,
+    RollingStockNotFound {
+        rolling_stock_name: String,
+    },
 }
 
 /// Path input is described by some rolling stock information
@@ -96,17 +99,17 @@ pub enum PathfindingResult {
 #[schema(as = PathfindingInputV2)]
 pub struct PathfindingInput {
     /// The loading gauge of the rolling stock
-    rolling_stock_loading_gauge: LoadingGaugeType,
+    pub rolling_stock_loading_gauge: LoadingGaugeType,
     /// Can the rolling stock run on non-electrified tracks
-    rolling_stock_is_thermal: bool,
+    pub rolling_stock_is_thermal: bool,
     /// List of supported electrification modes.
     /// Empty if does not support any electrification
-    rolling_stock_supported_electrification: Vec<String>,
+    pub rolling_stock_supported_electrification: Vec<String>,
     /// List of supported signaling systems
-    rolling_stock_supported_signaling_systems: Vec<String>,
+    pub rolling_stock_supported_signaling_systems: Vec<String>,
     /// List of waypoints given to the pathfinding
     #[schema(inline)]
-    path_items: Vec<PathItemLocation>,
+    pub path_items: Vec<PathItemLocation>,
 }
 
 /// Compute a pathfinding
