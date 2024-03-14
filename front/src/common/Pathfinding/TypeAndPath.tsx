@@ -66,7 +66,9 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
   const rollingStockId = useSelector(getRollingStockID);
   const [postSearch] = osrdEditoastApi.endpoints.postSearch.useMutation();
   const [postPathfinding] = osrdEditoastApi.endpoints.postPathfinding.useMutation();
-  const { t } = useTranslation('operationalStudies/manageTrainSchedule');
+  const { t: tManageTrainSchedule } = useTranslation('operationalStudies/manageTrainSchedule');
+  const { t: tTypeAndPath } = useTranslation('common/typeAndPath');
+
   const osrdActions = useOsrdConfActions();
 
   const [searchResults, setSearchResults] = useState<SearchResultItemOperationalPoint[]>([]);
@@ -80,6 +82,8 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
   const activeElement = document.activeElement as HTMLInputElement;
   const cursorIndex = activeElement.selectionStart || 0;
   const sortedSearchResults = [...searchResults].sort((a, b) => a.name.localeCompare(b.name));
+  const [initialCursorPositionRem, setInitialCursorPositionRem] = useState(0);
+  const [trigramCount, setTrigramCount] = useState(0);
 
   const handleInput = (text: string, cursorPosition: number) => {
     const trimmedTextStart = text.trimStart();
@@ -95,6 +99,8 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
     } else {
       let cumulativeLength = 0;
       const words = trimmedTextStart.split(' ');
+
+      // To find the word that is currently typing
       const currentWord = words.find((word, index) => {
         cumulativeLength += word.length + (index < words.length - 1 ? 1 : 0);
 
@@ -104,12 +110,6 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
       setSearch(currentWord || '');
     }
   };
-
-  useEffect(() => {
-    const cursorPositionRem = (cursorIndex - searchState.length / 2) * 0.55;
-
-    document.documentElement.style.setProperty('--cursor-position', `${cursorPositionRem}rem`);
-  }, [cursorIndex, searchState]);
 
   const searchOperationalPoints = async () => {
     const searchQuery = ['or', ['search', ['name'], debouncedSearchTerm]];
@@ -198,11 +198,6 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
         });
     }
   }
-  const [initialCursorPositionRem, setInitialCursorPositionRem] = useState(0);
-  const [trigramCount, setTrigramCount] = useState(0);
-  useEffect(() => {
-    setInitialCursorPositionRem(0);
-  }, []);
 
   const onResultClick = (result: SearchResultItemOperationalPoint) => {
     const newText = inputText.replace(searchState, result.trigram);
@@ -213,7 +208,7 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
     setTimeout(() => {
       const adjustedCursorPositionRem =
         initialCursorPositionRem -
-        trigramCount * (3 * monospaceOneCharREMWidth + monospaceOneCharREMWidth); // Ajustez selon le nombre de trigrammes
+        trigramCount * (3 * monospaceOneCharREMWidth + monospaceOneCharREMWidth);
       document.documentElement.style.setProperty(
         '--cursor-position',
         `${adjustedCursorPositionRem}rem`
@@ -241,6 +236,16 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
     }
   }, [debouncedInputText]);
 
+  useEffect(() => {
+    const cursorPositionRem = (cursorIndex - searchState.length / 2) * 0.55;
+
+    document.documentElement.style.setProperty('--cursor-position', `${cursorPositionRem}rem`);
+  }, [cursorIndex, searchState]);
+
+  useEffect(() => {
+    setInitialCursorPositionRem(0);
+  }, []);
+
   return (
     <>
       <div
@@ -248,7 +253,7 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
         style={{ minWidth: `${monospaceOneCharREMWidth * inputText.length + 5.5}rem` }} // To grow input field & whole div along text size
         data-testid="type-and-path-container"
       >
-        <div className="help">{opList.length === 0 && t('inputOPTrigrams')}</div>
+        <div className="help">{opList.length === 0 && tManageTrainSchedule('inputOPTrigrams')}</div>
         <OpTooltips opList={opList} />
         <div className="d-flex align-items-center">
           <div
@@ -262,7 +267,7 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
               type="text"
               value={inputText}
               onChange={(e) => handleInput(e.target.value, e.target.selectionStart as number)}
-              placeholder={t('inputOPTrigramsExample')}
+              placeholder={tManageTrainSchedule('inputOPTrigramsExample')}
               autoFocus
               data-testid="type-and-path-input"
             />
@@ -271,8 +276,8 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
           <button
             className="btn btn-sm btn-success"
             type="button"
-            aria-label={t('launchPathFinding')}
-            title={t('launchPathFinding')}
+            aria-label={tManageTrainSchedule('launchPathFinding')}
+            title={tManageTrainSchedule('launchPathFinding')}
             onClick={launchPathFinding}
             disabled={isInvalid || opList.length < 2}
             data-testid="submit-search-by-trigram"
@@ -301,7 +306,7 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
               {sortedSearchResults.length > 8 && (
                 <div
                   className="ellipsis-placeholder"
-                  title="Affinez votre recherche pour plus de résultats"
+                  title={tTypeAndPath('refineSearchForMoreResults')}
                 >
                   ...
                 </div>
