@@ -344,7 +344,7 @@ class Pathfinding<NodeT : Any, EdgeT : Any, OffsetType>(
                     filteredRange.edge,
                     filteredRange.start
                 )
-        queue.add(
+        val newStep =
             Step(
                 filteredRange,
                 prev,
@@ -353,7 +353,7 @@ class Pathfinding<NodeT : Any, EdgeT : Any, OffsetType>(
                 nPassedTargets,
                 targets
             )
-        )
+        if (newStep.weight.isFinite()) queue.add(newStep)
     }
 
     companion object {

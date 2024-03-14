@@ -4,7 +4,6 @@ import fr.sncf.osrd.api.FullInfra
 import fr.sncf.osrd.api.pathfinding.constraints.ElectrificationConstraints
 import fr.sncf.osrd.api.pathfinding.constraints.LoadingGaugeConstraints
 import fr.sncf.osrd.api.pathfinding.constraints.makeSignalingSystemConstraints
-import fr.sncf.osrd.api.pathfinding.makeHeuristics
 import fr.sncf.osrd.envelope_sim.TrainPhysicsIntegrator.areTimesEqual
 import fr.sncf.osrd.envelope_sim.allowances.utils.AllowanceValue
 import fr.sncf.osrd.graph.*
@@ -14,6 +13,7 @@ import fr.sncf.osrd.sim_infra.api.BlockId
 import fr.sncf.osrd.stdcm.STDCMResult
 import fr.sncf.osrd.stdcm.STDCMStep
 import fr.sncf.osrd.stdcm.infra_exploration.initInfraExplorerWithEnvelope
+import fr.sncf.osrd.stdcm.makeSTDCMHeuristics
 import fr.sncf.osrd.stdcm.preprocessing.interfaces.BlockAvailabilityInterface
 import fr.sncf.osrd.train.RollingStock
 import fr.sncf.osrd.train.RollingStock.Comfort
@@ -66,14 +66,19 @@ fun findPath(
         )
 
     // Initialize the A* heuristic
-    val locations = steps.stream().map(STDCMStep::locations).toList()
-    val remainingDistanceEstimators = makeHeuristics(fullInfra, locations)
     val endBlocks = steps.last().locations.map { it.edge }
     val path =
         Pathfinding(graph)
             .setEdgeToLength { edge -> edge.infraExplorer.getCurrentBlockLength().cast() }
             .setRemainingDistanceEstimator(
-                makeAStarHeuristic(remainingDistanceEstimators, rollingStock)
+                makeSTDCMHeuristics(
+                    fullInfra.blockInfra,
+                    fullInfra.rawInfra,
+                    steps,
+                    maxRunTime,
+                    rollingStock,
+                    maxDepartureDelay
+                )
             )
             .setEdgeToLength { edge -> edge.length.cast() }
             .addBlockedRangeOnEdges { edge: STDCMEdge ->

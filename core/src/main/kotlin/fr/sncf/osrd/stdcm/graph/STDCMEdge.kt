@@ -109,6 +109,10 @@ data class STDCMEdge(
         }
     }
 
+    override fun toString(): String {
+        return "STDCMEdge(timeStart=$timeStart, block=$block)"
+    }
+
     val block = infraExplorer.getCurrentBlock()
     val totalTime: Double
         /**
