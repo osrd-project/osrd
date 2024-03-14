@@ -79,13 +79,37 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
 
   const activeElement = document.activeElement as HTMLInputElement;
   const cursorIndex = activeElement.selectionStart || 0;
+  const sortedSearchResults = [...searchResults].sort((a, b) => a.name.localeCompare(b.name));
 
-  const handleInput = (text: string) => {
-    setInputText(text.trimStart());
-    const lastSpaceIndex = text.lastIndexOf(' ', cursorIndex);
-    const searchText = text.substring(lastSpaceIndex, cursorIndex + 1).trim();
-    setSearch(searchText);
+  const handleInput = (text: string, cursorPosition: number) => {
+    const trimmedTextStart = text.trimStart();
+    setInputText(trimmedTextStart);
+
+    const isCursorSurroundedBySpaces =
+      text[cursorPosition - 1] === ' ' &&
+      (text[cursorPosition] === ' ' || cursorPosition === text.length);
+
+    if (isCursorSurroundedBySpaces) {
+      setSearchResults([]);
+      setSearch('');
+    } else {
+      let cumulativeLength = 0;
+      const words = trimmedTextStart.split(' ');
+      const currentWord = words.find((word, index) => {
+        cumulativeLength += word.length + (index < words.length - 1 ? 1 : 0);
+
+        return cursorPosition <= cumulativeLength;
+      });
+
+      setSearch(currentWord || '');
+    }
   };
+
+  useEffect(() => {
+    const cursorPositionRem = (cursorIndex - searchState.length / 2) * 0.55;
+
+    document.documentElement.style.setProperty('--cursor-position', `${cursorPositionRem}rem`);
+  }, [cursorIndex, searchState]);
 
   const searchOperationalPoints = async () => {
     const searchQuery = ['or', ['search', ['name'], debouncedSearchTerm]];
@@ -174,13 +198,31 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
         });
     }
   }
+  const [initialCursorPositionRem, setInitialCursorPositionRem] = useState(0);
+  const [trigramCount, setTrigramCount] = useState(0);
+  useEffect(() => {
+    setInitialCursorPositionRem(0);
+  }, []);
 
   const onResultClick = (result: SearchResultItemOperationalPoint) => {
     const newText = inputText.replace(searchState, result.trigram);
-
     setInputText(newText);
     setSearch('');
-    if (inputRef.current) inputRef.current.focus();
+    setTrigramCount((prev) => prev + 1);
+
+    setTimeout(() => {
+      const adjustedCursorPositionRem =
+        initialCursorPositionRem -
+        trigramCount * (3 * monospaceOneCharREMWidth + monospaceOneCharREMWidth); // Ajustez selon le nombre de trigrammes
+      document.documentElement.style.setProperty(
+        '--cursor-position',
+        `${adjustedCursorPositionRem}rem`
+      );
+
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, 0);
   };
 
   useEffect(() => {
@@ -189,7 +231,7 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
     } else if (searchResults.length) {
       setSearchResults([]);
     }
-  }, [debouncedSearchTerm]);
+  }, [debouncedSearchTerm, inputText]);
 
   useEffect(() => {
     if (debouncedInputText !== '') {
@@ -198,11 +240,6 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
       setOpList([]);
     }
   }, [debouncedInputText]);
-
-  useEffect(() => {
-    const cursorPositionRem = cursorIndex * 0.5;
-    document.documentElement.style.setProperty('--cursor-position', `${cursorPositionRem}rem`);
-  }, [cursorIndex]);
 
   return (
     <>
@@ -224,7 +261,7 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
               className="form-control form-control-sm text-zone"
               type="text"
               value={inputText}
-              onChange={(e) => handleInput(e.target.value)}
+              onChange={(e) => handleInput(e.target.value, e.target.selectionStart as number)}
               placeholder={t('inputOPTrigramsExample')}
               autoFocus
               data-testid="type-and-path-input"
@@ -247,19 +284,29 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
       {searchResults.length > 0 && (
         <>
           <span className="arrow-img"> </span>
-          <div className="station-result list-group-item border-0 p-0 pl-2">
-            {searchResults.map((result) => (
-              <button
-                id={`trigram-button-${result.name}`}
-                type="button"
-                onClick={() => onResultClick(result)}
-                key={result.obj_id}
-                className="badge bg-coolgray7 text-coolgray13 m-1 border-0 p-1"
-                title={`${result.name} ${result.ch}`}
-              >
-                <span className="badge-text text-secondary">{result.name}</span>
-              </button>
-            ))}
+          <div className="results-container">
+            <div className="station-results  p-2 ">
+              {sortedSearchResults.map((result) => (
+                <button
+                  id={`trigram-button-${result.name}`}
+                  type="button"
+                  onClick={() => onResultClick(result)}
+                  key={result.obj_id}
+                  className="station"
+                  title={`${result.name} ${result.ch}`}
+                >
+                  <span className="station-text text-secondary ">{result.name}</span>
+                </button>
+              ))}
+              {sortedSearchResults.length > 8 && (
+                <div
+                  className="ellipsis-placeholder"
+                  title="Affinez votre recherche pour plus de résultats"
+                >
+                  ...
+                </div>
+              )}
+            </div>
           </div>
         </>
       )}
