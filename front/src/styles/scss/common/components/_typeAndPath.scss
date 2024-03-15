@@ -113,15 +113,14 @@
   width: 1px;
   height: 1px;
   background-color: transparent;
-}
-
-.arrow-img::before {
-  content: '';
-  position: absolute;
-  bottom: 25%;
-  left: var(--cursor-position);
-  border-left: 1.2rem solid transparent;
-  border-right: 1.2rem solid transparent;
-  border-bottom: 1.5rem solid white;
-  z-index: 4;
+  &:before {
+    content: '';
+    position: absolute;
+    bottom: 25%;
+    left: var(--cursor-position);
+    border-left: 1.2rem solid transparent;
+    border-right: 1.2rem solid transparent;
+    border-bottom: 1.5rem solid white;
+    z-index: 4;
+  }
 }
