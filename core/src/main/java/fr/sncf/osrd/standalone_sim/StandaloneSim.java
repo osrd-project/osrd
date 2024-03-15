@@ -128,7 +128,10 @@ public class StandaloneSim {
             double timeStep) {
         // Parse trainPath
         var chunkPath = makeChunkPath(infra.rawInfra(), rjsTrainPath);
-        var trainPath = makePathProperties(infra.rawInfra(), chunkPath);
+        var trainPath = makePathProperties(
+                infra.rawInfra(),
+                chunkPath,
+                rjsTrainPath.routePath.stream().map(rp -> rp.route).toList());
         var envelopePath = EnvelopeTrainPath.from(infra.rawInfra(), trainPath, electricalProfileMap);
 
         // Parse train schedules
