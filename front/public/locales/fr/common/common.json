@@ -7,7 +7,7 @@
     "split": "Diviser",
     "translate": "Translater",
     "zoom-in": "Agrandir",
-    "Zoom-out": "Réduire",
+    "zoom-out": "Réduire",
     "deleteSelectionCount": "Confirmez-vous la suppression de {{items}}?"
   },
   "navigation": {
