@@ -39,12 +39,11 @@ import fr.sncf.osrd.utils.indexing.DirStaticIdxList
 import fr.sncf.osrd.utils.indexing.IdxMap
 import fr.sncf.osrd.utils.indexing.MutableDirStaticIdxArrayList
 import fr.sncf.osrd.utils.indexing.MutableStaticIdxArrayList
-import fr.sncf.osrd.utils.indexing.MutableStaticIdxArraySet
 import fr.sncf.osrd.utils.indexing.StaticIdx
 import fr.sncf.osrd.utils.indexing.StaticIdxList
-import fr.sncf.osrd.utils.indexing.StaticIdxSortedSet
 import fr.sncf.osrd.utils.indexing.StaticPool
 import fr.sncf.osrd.utils.indexing.mutableStaticIdxArrayListOf
+import fr.sncf.osrd.utils.indexing.mutableStaticIdxArraySetOf
 import fr.sncf.osrd.utils.units.Distance
 import fr.sncf.osrd.utils.units.Length
 import fr.sncf.osrd.utils.units.Offset
@@ -87,9 +86,20 @@ class RawInfraFromRjsBuilderImpl : RawInfraBuilder {
         return trackSectionDistanceSortedChunkMap
     }
 
-    // TODO remove this accessor once useless in adapter
     fun getTrackNodePool(): StaticPool<TrackNode, TrackNodeDescriptor> {
         return trackNodePool
+    }
+
+    fun getTrackSectionPool(): StaticPool<TrackSection, TrackSectionDescriptor> {
+        return trackSectionPool
+    }
+
+    fun getNodeAtEndpoint(trackSectionEndpoint: EndpointTrackSectionId): TrackNodeId? {
+        return nodeAtEndpoint[trackSectionEndpoint]
+    }
+
+    fun getDetectorName(detectorIdx: DetectorId): String? {
+        return detectorPool[detectorIdx]
     }
 
     private fun getTrackSectionIdx(name: String): TrackSectionId {
@@ -152,21 +162,11 @@ class RawInfraFromRjsBuilderImpl : RawInfraBuilder {
         nextZones[detector] = zone
     }
 
-    override fun zone(movableElements: StaticIdxSortedSet<TrackNode>): ZoneId {
-        return zonePool.add(ZoneDescriptor(movableElements))
-    }
+    override fun zone(movableElements: List<TrackNodeId>, bounds: List<DirDetectorId>): ZoneId {
+        val nodes = mutableStaticIdxArraySetOf<TrackNode>()
+        nodes.addAll(movableElements)
+        val zone = zonePool.add(ZoneDescriptor(nodes))
 
-    override fun zone(movableElements: List<TrackNodeId>): ZoneId {
-        val set = MutableStaticIdxArraySet<TrackNode>()
-        for (item in movableElements) set.add(item)
-        return zonePool.add(ZoneDescriptor(set))
-    }
-
-    override fun zone(
-        movableElements: StaticIdxSortedSet<TrackNode>,
-        bounds: List<DirDetectorId>
-    ): ZoneId {
-        val zone = zonePool.add(ZoneDescriptor(movableElements))
         for (detectorDir in bounds) setNextZone(detectorDir, zone)
         return zone
     }
