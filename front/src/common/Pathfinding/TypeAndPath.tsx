@@ -21,6 +21,11 @@ import { setFailure } from 'reducers/main';
 import { useAppDispatch } from 'store';
 import { castErrorToFailure } from 'utils/error';
 import { useDebounce } from 'utils/helpers';
+import {
+  isCursorSurroundedBySpace,
+  findCurrentWord,
+  calculateAdjustedCursorPositionRem,
+} from 'utils/inputManipulation';
 
 type SearchConstraintType = (string | number | string[])[];
 type PathfindingProps = {
@@ -89,24 +94,11 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
     const trimmedTextStart = text.trimStart();
     setInputText(trimmedTextStart);
 
-    const isCursorSurroundedBySpaces =
-      text[cursorPosition - 1] === ' ' &&
-      (text[cursorPosition] === ' ' || cursorPosition === text.length);
-
-    if (isCursorSurroundedBySpaces) {
+    if (isCursorSurroundedBySpace(text, cursorPosition)) {
       setSearchResults([]);
       setSearch('');
     } else {
-      let cumulativeLength = 0;
-      const words = trimmedTextStart.split(' ');
-
-      // To find the word that is currently typing
-      const currentWord = words.find((word, index) => {
-        cumulativeLength += word.length + (index < words.length - 1 ? 1 : 0);
-
-        return cursorPosition <= cumulativeLength;
-      });
-
+      const currentWord = findCurrentWord(trimmedTextStart, cursorPosition);
       setSearch(currentWord || '');
     }
   };
@@ -206,9 +198,11 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
     setTrigramCount((prev) => prev + 1);
 
     setTimeout(() => {
-      const adjustedCursorPositionRem =
-        initialCursorPositionRem -
-        trigramCount * (3 * monospaceOneCharREMWidth + monospaceOneCharREMWidth);
+      const adjustedCursorPositionRem = calculateAdjustedCursorPositionRem(
+        initialCursorPositionRem,
+        trigramCount,
+        monospaceOneCharREMWidth
+      );
       document.documentElement.style.setProperty(
         '--cursor-position',
         `${adjustedCursorPositionRem}rem`
