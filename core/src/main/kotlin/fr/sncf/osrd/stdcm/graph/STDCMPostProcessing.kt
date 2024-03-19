@@ -1,9 +1,14 @@
 package fr.sncf.osrd.stdcm.graph
 
 import fr.sncf.osrd.api.pathfinding.makeOperationalPoints
+import fr.sncf.osrd.envelope.Envelope
+import fr.sncf.osrd.envelope_sim.EnvelopeSimPath
 import fr.sncf.osrd.envelope_sim.TrainPhysicsIntegrator
 import fr.sncf.osrd.envelope_sim.allowances.utils.AllowanceValue
+import fr.sncf.osrd.envelope_sim.pipelines.MaxEffortEnvelope
+import fr.sncf.osrd.envelope_sim.pipelines.MaxSpeedEnvelope
 import fr.sncf.osrd.envelope_sim_infra.EnvelopeTrainPath
+import fr.sncf.osrd.envelope_sim_infra.MRSP
 import fr.sncf.osrd.graph.Pathfinding
 import fr.sncf.osrd.graph.Pathfinding.EdgeLocation
 import fr.sncf.osrd.graph.Pathfinding.EdgeRange
@@ -33,25 +38,35 @@ class STDCMPostProcessing(private val graph: STDCMGraph) {
         path: Pathfinding.Result<STDCMEdge, STDCMEdge>,
         startTime: Double,
         standardAllowance: AllowanceValue?,
-        rollingStock: RollingStock?,
+        rollingStock: RollingStock,
         timeStep: Double,
         comfort: Comfort?,
         maxRunTime: Double,
-        blockAvailability: BlockAvailabilityInterface
+        blockAvailability: BlockAvailabilityInterface,
+        trainTag: String?
     ): STDCMResult? {
         val ranges = makeEdgeRange(path)
         val blockRanges = makeBlockRanges(ranges)
         val blockWaypoints = makeBlockWaypoints(path)
         val chunkPath = makeChunkPathFromRanges(graph, ranges)
         val trainPath = makePathProperties(infra!!, chunkPath)
-        val physicsPath = EnvelopeTrainPath.from(infra, trainPath)
-        val mergedEnvelopes = mergeEnvelopeRanges(ranges, physicsPath)
-        val departureTime = computeDepartureTime(ranges, startTime)
         val stops = makeStops(ranges)
+        val physicsPath = EnvelopeTrainPath.from(infra, trainPath)
+        val maxSpeedEnvelope =
+            makeMaxSpeedEnvelope(
+                trainPath,
+                physicsPath,
+                stops,
+                rollingStock,
+                timeStep,
+                comfort,
+                trainTag
+            )
+        val departureTime = computeDepartureTime(ranges, startTime)
         val withAllowance =
-            applyAllowance(
+            buildFinalEnvelope(
                 graph,
-                mergedEnvelopes,
+                maxSpeedEnvelope,
                 ranges,
                 standardAllowance,
                 physicsPath,
@@ -80,6 +95,22 @@ class STDCMPostProcessing(private val graph: STDCMGraph) {
             // as we only check the time at the start of an edge when exploring the graph
             null
         } else res
+    }
+
+    private fun makeMaxSpeedEnvelope(
+        trainPath: PathProperties,
+        physicsPath: EnvelopeSimPath,
+        stops: List<TrainStop>,
+        rollingStock: RollingStock,
+        timeStep: Double,
+        comfort: Comfort?,
+        trainTag: String?
+    ): Envelope {
+        val context = build(rollingStock, physicsPath, timeStep, comfort)
+        val mrsp = MRSP.computeMRSP(trainPath, rollingStock, false, trainTag)
+        val stopPositions = stops.map { it.position }.toDoubleArray()
+        val maxSpeedEnvelope = MaxSpeedEnvelope.from(context, stopPositions, mrsp)
+        return MaxEffortEnvelope.from(context, 0.0, maxSpeedEnvelope)
     }
 }
 
@@ -136,7 +167,7 @@ private fun makeStops(ranges: List<EdgeRange<STDCMEdge, STDCMEdge>>): List<Train
         val prevNode = range.edge.previousNode
         if (
             (prevNode != null) &&
-                (prevNode.stopDuration!! >= 0) &&
+                (prevNode.stopDuration != null) &&
                 (range.start == Offset<STDCMEdge>(0.meters))
         )
             res.add(TrainStop(offset.meters, prevNode.stopDuration))
