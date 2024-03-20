@@ -74,17 +74,15 @@ const MapSearchOperationalPoint = ({
       query: ['and', searchQuery, infraID !== undefined ? ['=', ['infra_id'], infraID] : true],
     };
 
-    await postSearch({
-      searchPayload: payload,
-      pageSize: 101,
-    })
-      .unwrap()
-      .then((results) => {
-        setSearchResults(results as SearchResultItemOperationalPoint[]);
-      })
-      .catch(() => {
-        setSearchResults([]);
-      });
+    try {
+      const results = await postSearch({
+        searchPayload: payload,
+        pageSize: 101,
+      }).unwrap();
+      setSearchResults(results as SearchResultItemOperationalPoint[]);
+    } catch (error) {
+      setSearchResults([]);
+    }
   };
 
   const onResultClick = (result: SearchResultItemOperationalPoint) => {
@@ -106,6 +104,22 @@ const MapSearchOperationalPoint = ({
     }
   }, [debouncedSearchTerm]);
 
+  const [selectedResultIndex, setSelectedResultIndex] = useState(-1);
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'ArrowUp') {
+      setSelectedResultIndex((prevIndex) =>
+        prevIndex > 0 ? prevIndex - 1 : searchResults.length - 1
+      );
+    } else if (event.key === 'ArrowDown') {
+      setSelectedResultIndex((prevIndex) =>
+        prevIndex < searchResults.length - 1 ? prevIndex + 1 : 0
+      );
+    } else if (event.key === 'Enter') {
+      onResultClick(sortedResults[selectedResultIndex]);
+    }
+  };
+
   return (
     <div className="mt-2">
       <div className="d-flex mb-2 flex-column flex-md-row">
@@ -115,6 +129,7 @@ const MapSearchOperationalPoint = ({
             name="map-search-operational-points"
             placeholder={t('placeholdername')}
             title={t('placeholdername')}
+            inputProps={{ onKeyDown: handleKeyDown }}
             type="text"
             value={searchTerm}
             onChange={(e) => {
@@ -166,12 +181,16 @@ const MapSearchOperationalPoint = ({
       <div className="search-results">
         {searchResults.length > 0 &&
           searchResults.length <= 100 &&
-          sortedResults.map((searchResult) => (
+          sortedResults.map((searchResult, index) => (
             <button
               type="button"
-              className={cx('search-result-item', { main: searchResult.ch === '' })}
+              className={cx('search-result-item', {
+                main: searchResult.ch === '',
+                selected: index === selectedResultIndex,
+              })}
               key={`mapSearchOperationalPoint-${searchResult.obj_id}`}
               onClick={() => onResultClick(searchResult)}
+              tabIndex={-1}
             >
               <span className="trigram">{searchResult.trigram}</span>
               <span className="name">
