@@ -2,6 +2,7 @@ import React, { type ChangeEvent, useCallback, useMemo, useState } from 'react';
 
 import cx from 'classnames';
 import { isNil } from 'lodash';
+import nextId from 'react-id-generator';
 
 import type { MultiUnit } from 'modules/rollingStock/types';
 import { isFloat, stripDecimalDigits } from 'utils/numbers';
@@ -142,7 +143,7 @@ export default function InputGroupSNCF<U extends string | MultiUnit>({
             >
               {options.map((option) => (
                 <div
-                  key={option.id}
+                  key={nextId()}
                   onClick={() => {
                     onChange({
                       unit: option.id as U,
