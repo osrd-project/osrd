@@ -181,7 +181,9 @@ class STDCMPathfindingB(
     private fun buildResult(edge: STDCMEdge): Result {
         var mutLastEdge: STDCMEdge? = edge
         val edges = ArrayDeque<STDCMEdge>()
-        val waypoints = ArrayList<EdgeLocation>()
+        val waypoints = ArrayDeque<EdgeLocation>()
+        val lastWaypoint = EdgeLocation(edge, edge.length)
+        waypoints.add(lastWaypoint)
         while (mutLastEdge != null) {
             edges.addFirst(mutLastEdge)
             val nbWaypoints = mutLastEdge.waypointIndex
@@ -192,10 +194,11 @@ class STDCMPathfindingB(
             val newNbWaypoints = mutLastEdge.waypointIndex
             // TODO: check off-by-one and offset
             if (nbWaypoints > newNbWaypoints) {
-                waypoints.add(EdgeLocation(mutLastEdge, Offset(0.meters)))
+                waypoints.addFirst(EdgeLocation(mutLastEdge, Offset(0.meters)))
             }
         }
-        return Result(edges.toList(), waypoints)
+        waypoints.addFirst(EdgeLocation(edges.first, Offset(0.meters)))
+        return Result(edges.toList(), waypoints.toList())
     }
 
     private fun checkParameters() {
