@@ -22,9 +22,9 @@ import { useAppDispatch } from 'store';
 import { castErrorToFailure } from 'utils/error';
 import { useDebounce } from 'utils/helpers';
 import {
-  isCursorSurroundedBySpace,
-  findCurrentWord,
   calculateAdjustedCursorPositionRem,
+  findCurrentWord,
+  isCursorSurroundedBySpace,
   replaceCurrentWord,
 } from 'utils/inputManipulation';
 
@@ -95,6 +95,7 @@ export default function TypeAndPath({ zoomToFeature }: PathfindingProps) {
   const handleInput = (text: string, newCursorPosition: number) => {
     const trimmedTextStart = text.trimStart();
     setInputText(trimmedTextStart);
+
     if (isCursorSurroundedBySpace(text, newCursorPosition)) {
       setSearchResults([]);
       setSearch('');

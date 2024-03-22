@@ -1,8 +1,9 @@
 import type { SearchResultItemOperationalPoint } from 'common/api/osrdEditoastApi';
 
 export const isCursorSurroundedBySpace = (text: string, cursorPosition: number) =>
-  text[cursorPosition - 1] === ' ' &&
-  (text[cursorPosition] === ' ' || cursorPosition === text.length);
+  (text[cursorPosition - 1] === ' ' &&
+    (text[cursorPosition] === ' ' || cursorPosition === text.length)) ||
+  (text[cursorPosition - 1] === ' ' && text[cursorPosition].match(/\S/));
 
 export const findCurrentWord = (text: string, cursorPosition: number) => {
   const trimmedTextStart = text.trimStart();
