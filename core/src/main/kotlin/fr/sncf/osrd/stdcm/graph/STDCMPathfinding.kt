@@ -22,7 +22,7 @@ import fr.sncf.osrd.utils.units.meters
  * Given an infra, a rolling stock and a collection of unavailable time for each block, find a path
  * made of a sequence of block ranges with a matching envelope. Returns null if no path is found.
  */
-fun findPath(
+fun findPathOld(
     fullInfra: FullInfra,
     rollingStock: RollingStock,
     comfort: Comfort?,
@@ -37,6 +37,7 @@ fun findPath(
     pathfindingTimeout: Double
 ): STDCMResult? {
     assert(steps.size >= 2) { "Not enough steps have been set to find a path" }
+
     val graph =
         STDCMGraph(
             fullInfra,
@@ -55,6 +56,7 @@ fun findPath(
     val locations = steps.stream().map(STDCMStep::locations).toList()
     val remainingDistanceEstimators = makeHeuristics(fullInfra, locations)
     val endBlocks = steps.last().locations.map { it.edge }
+
     val path =
         Pathfinding(graph)
             .setRemainingDistanceEstimator(
@@ -76,6 +78,7 @@ fun findPath(
                 ),
                 makeObjectiveFunction(steps)
             ) ?: return null
+
     return STDCMPostProcessing(graph)
         .makeResult(
             fullInfra.rawInfra,
