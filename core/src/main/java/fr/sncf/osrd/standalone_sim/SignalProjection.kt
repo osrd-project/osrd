@@ -16,6 +16,7 @@ import fr.sncf.osrd.utils.indexing.StaticIdxList
 import fr.sncf.osrd.utils.indexing.mutableStaticIdxArrayListOf
 import fr.sncf.osrd.utils.toRouteIdList
 import java.awt.Color
+import kotlin.math.abs
 
 data class SignalAspectChangeEvent(val newAspect: String, val time: Long)
 
@@ -30,6 +31,7 @@ fun project(
     val loadedSignalInfra = fullInfra.loadedSignalInfra
     val blockInfra = fullInfra.blockInfra
     val simulator = fullInfra.signalingSimulator
+    val sigModuleManager = simulator.sigModuleManager
 
     // TODO: allowed signaling systems should depend on the type of train
     val sigSystemManager = simulator.sigModuleManager
@@ -37,6 +39,18 @@ fun project(
     val bapr = sigSystemManager.findSignalingSystem("BAPR")
     val tvm300 = sigSystemManager.findSignalingSystem("TVM300")
     val tvm430 = sigSystemManager.findSignalingSystem("TVM430")
+
+    val leastConstrainingStates = mutableMapOf<SignalingSystemId, SigState>()
+    leastConstrainingStates[bal] = (sigModuleManager.getStateSchema(bal)) { value("aspect", "VL")}
+    leastConstrainingStates[bapr] = (sigModuleManager.getStateSchema(bapr)) { value("aspect", "VL")}
+    leastConstrainingStates[tvm300] = (sigModuleManager.getStateSchema(tvm300)) { value("aspect", "300VL")}
+    leastConstrainingStates[tvm430] = (sigModuleManager.getStateSchema(tvm430)) { value("aspect", "VL")} // FIXME: when TVM 430 is implemented
+
+//    val leastConstrainingSettings = mutableMapOf<SignalingSystemId, SigSettings>()
+//    leastConstrainingSettings[bal] = (sigModuleManager.getSettingsSchema(bal)) { value("Nf", "false"); value("jaune_cli", "false")}
+//    leastConstrainingSettings[bapr] = (sigModuleManager.getSettingsSchema(bapr)) { value("Nf", "false")}
+//    leastConstrainingSettings[tvm300] = (sigModuleManager.getSettingsSchema(tvm300)) { value("Nf", "false")}
+//    leastConstrainingSettings[tvm430] = (sigModuleManager.getSettingsSchema(tvm430)) { value("Nf", "false")} // FIXME: when TVM 430 is implemented
 
     // Recover blocks from the route path
     val routePath = toRouteIdList(routePathIds)
@@ -68,6 +82,8 @@ fun project(
     val startOffset =
         trainPathBlockOffset(fullInfra.rawInfra, fullInfra.blockInfra, blockPath, chunkPath)
     val pathSignals = pathSignals(startOffset, blockPath, blockInfra)
+    if (pathSignals.isEmpty())
+        return SignalProjectionResult(listOf())
 
     val signalAspectChangeEvents =
         computeSignalAspectChangeEvents(
@@ -79,7 +95,8 @@ fun project(
             zoneUpdates,
             simulator,
             rawInfra,
-            loadedSignalInfra
+            loadedSignalInfra,
+            leastConstrainingStates,
         )
     val signalUpdates =
         signalUpdates(
@@ -101,7 +118,8 @@ private fun computeSignalAspectChangeEvents(
     zoneUpdates: List<ZoneUpdate>,
     simulator: SignalingSimulator,
     rawInfra: SimInfraAdapter,
-    loadedSignalInfra: LoadedSignalInfra
+    loadedSignalInfra: LoadedSignalInfra,
+    leastConstrainingStates: Map<SignalingSystemId, SigState>,
 ): Map<PathSignal, MutableList<SignalAspectChangeEvent>> {
     val routes = routePath.toList()
     val zoneCount = blockPath.sumOf { blockInfra.getBlockPath(it).size }
@@ -110,8 +128,18 @@ private fun computeSignalAspectChangeEvents(
 
     val signalAspects =
         pathSignals
-            .associateBy({ it.signal }, { "VL" })
-            .toMutableMap() // TODO: Have a better way to get the least restrictive aspect
+            .associateBy({ it.signal }, { leastConstrainingStates[loadedSignalInfra.getSignalingSystem(it.signal)]!!.getEnum("aspect") })
+            .toMutableMap()
+
+    val lastSignal = pathSignals.last().signal
+    val lastSignalDriver = loadedSignalInfra.getDrivers(lastSignal).lastOrNull()
+    val lastSignalInputSystem = if (lastSignalDriver != null) {
+        simulator.sigModuleManager.getInputSignalingSystem(lastSignalDriver)
+    } else {
+        loadedSignalInfra.getSignalingSystem(lastSignal) // If it could connect to anything, lets pretend it does to itself
+    }
+    val nextSignalState = leastConstrainingStates[lastSignalInputSystem]!!
+
 
     val signalAspectChangeEvents =
         pathSignals.associateBy({ it }, { mutableListOf<SignalAspectChangeEvent>() })
@@ -129,7 +157,8 @@ private fun computeSignalAspectChangeEvents(
                 routes,
                 blockPath.size,
                 zoneStates,
-                ZoneStatus.CLEAR
+                ZoneStatus.CLEAR,
+                nextSignalState
             )
         val simulatedAspects = simulatedSignalStates.mapValues { it.value.getEnum("aspect") }
         for (pathSignal in pathSignals) {
@@ -170,6 +199,15 @@ private fun signalUpdates(
             "(A)" -> Color.YELLOW.rgb
             "S" -> Color.RED.rgb
             "C" -> Color.RED.rgb
+            "300VL" -> Color.GREEN.rgb
+            "300(VL)" -> Color.GRAY.rgb
+            "270A" -> Color.GRAY.rgb
+            "220A" -> Color.GRAY.rgb
+            "160A" -> Color.GRAY.rgb
+            "080A" -> Color.GRAY.rgb
+            "000" -> Color.GRAY.rgb
+            "RRR" -> Color.RED.rgb
+            "OCCUPIED" -> Color.RED.rgb
             else -> throw OSRDError.newAspectError(aspect)
         }
     }
@@ -197,22 +235,24 @@ private fun signalUpdates(
         // It happens before the first event
         if (events.first().time != 0L && signalSightingMap.contains(physicalSignalName)) {
             val event = events.first()
-            val timeEnd = event.time
+            val timeEnd = event.time.toDouble() / 1000
             val timeStart = signalSightingMap[physicalSignalName]!!.time
-            signalUpdates.add(
-                SignalUpdate(
-                    signalId,
-                    timeStart,
-                    timeEnd.toDouble() / 1000,
-                    positionStart.meters,
-                    positionEnd?.meters,
-                    color("VL"),
-                    blinking("VL"),
-                    "VL",
-                    track,
-                    trackOffset
+            if (abs(timeStart - timeEnd) > 0.1) {
+                signalUpdates.add(
+                    SignalUpdate(
+                        signalId,
+                        timeStart,
+                        timeEnd,
+                        positionStart.meters,
+                        positionEnd?.meters,
+                        color("VL"),
+                        blinking("VL"),
+                        "VL",
+                        track,
+                        trackOffset
+                    )
                 )
-            )
+            }
         }
 
         for (i in 0 until events.size - 1) {
@@ -237,7 +277,7 @@ private fun signalUpdates(
         }
 
         // The last event only generates an update if the signal doesn't return to VL
-        if (events.last().newAspect != "VL") {
+        if (events.last().newAspect != "VL" && events.last().newAspect != "300VL") {
             val event = events.last()
             val timeStart = event.time
             signalUpdates.add(

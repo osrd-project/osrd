@@ -35,10 +35,12 @@ interface SigSystemManager : InfraSigSystemManager {
         maView: MovementAuthorityView?,
         limitView: SpeedLimitView?
     ): SigState
+
+    fun isConstraining(signalingSystem: SignalingSystemId, signalState: SigState, trainState: SignalingTrainState): Boolean
 }
 
 interface SignalingSimulator {
-    val sigModuleManager: InfraSigSystemManager
+    val sigModuleManager: SigSystemManager
 
     fun loadSignals(unloadedSignalInfra: RawSignalingInfra): LoadedSignalInfra
 
@@ -56,5 +58,7 @@ interface SignalingSimulator {
         evaluatedPathEnd: Int,
         zoneStates: List<ZoneStatus>,
         followingZoneState: ZoneStatus,
+        followingSignalState: SigState? = null,
+        followingSignalSettings: SigSettings? = null
     ): Map<LogicalSignalId, SigState>
 }

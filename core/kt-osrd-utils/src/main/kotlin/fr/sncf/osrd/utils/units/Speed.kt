@@ -3,7 +3,7 @@ package fr.sncf.osrd.utils.units
 private const val multiplier = 1000.0
 
 @JvmInline
-value class Speed(val millimetersPerSecond: ULong) {
+value class Speed(val millimetersPerSecond: ULong) : Comparable<Speed> {
     val metersPerSecond
         get() = millimetersPerSecond.toDouble() / multiplier
 
@@ -26,7 +26,14 @@ value class Speed(val millimetersPerSecond: ULong) {
             return speed.metersPerSecond
         }
     }
+
+    override fun compareTo(other: Speed): Int {
+        return millimetersPerSecond.compareTo(other.millimetersPerSecond)
+    }
 }
 
 val Double.metersPerSecond: Speed
     get() = Speed.fromMetersPerSecond(this)
+
+val Int.kilometersPerHour: Speed
+    get() = Speed.fromMetersPerSecond(this * 1000.0 / 3600.0)
