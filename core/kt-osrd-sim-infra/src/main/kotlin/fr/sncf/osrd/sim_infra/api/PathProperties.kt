@@ -62,18 +62,23 @@ interface PathProperties {
 
 /** Build a Path from chunks and offsets, filtering the chunks outside the offsets */
 fun buildPathPropertiesFrom(
-    infra: TrackProperties,
+    infra: RawSignalingInfra,
     chunks: DirStaticIdxList<TrackChunk>,
     pathBeginOffset: Offset<Path>,
     pathEndOffset: Offset<Path>,
+    routes: List<String>? = null
 ): PathProperties {
     val chunkPath = buildChunkPath(infra, chunks, pathBeginOffset, pathEndOffset)
-    return makePathProperties(infra, chunkPath)
+    return makePathProperties(infra, chunkPath, routes)
 }
 
 @JvmName("makePathProperties")
-fun makePathProperties(infra: TrackProperties, chunkPath: ChunkPath): PathProperties {
-    return PathPropertiesImpl(infra, chunkPath)
+fun makePathProperties(
+    infra: RawSignalingInfra,
+    chunkPath: ChunkPath,
+    routes: List<String>? = null
+): PathProperties {
+    return PathPropertiesImpl(infra, chunkPath, routes?.map { r -> infra.getRouteFromName(r) })
 }
 
 /** For java interoperability purpose */
