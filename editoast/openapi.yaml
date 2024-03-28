@@ -4585,8 +4585,10 @@ components:
           format: date-time
           type: string
         description:
+          nullable: true
           type: string
         funders:
+          nullable: true
           type: string
         id:
           format: int64
@@ -4601,15 +4603,13 @@ components:
         name:
           type: string
         objectives:
+          nullable: true
           type: string
         tags:
           $ref: '#/components/schemas/Tags'
       required:
       - id
       - name
-      - objectives
-      - description
-      - funders
       - creation_date
       - last_modification
       - tags
@@ -4623,9 +4623,11 @@ components:
           type: integer
         description:
           maxLength: 1024
+          nullable: true
           type: string
         funders:
           maxLength: 1024
+          nullable: true
           type: string
         image:
           description: The id of the image document
@@ -4637,6 +4639,7 @@ components:
           type: string
         objectives:
           maxLength: 4096
+          nullable: true
           type: string
         tags:
           $ref: '#/components/schemas/Tags'
@@ -6294,11 +6297,13 @@ components:
           nullable: true
           type: integer
         business_code:
+          nullable: true
           type: string
         creation_date:
           format: date-time
           type: string
         description:
+          nullable: true
           type: string
         expected_end_date:
           format: date
@@ -6316,6 +6321,7 @@ components:
           format: int64
           type: integer
         service_code:
+          nullable: true
           type: string
         start_date:
           format: date
@@ -6324,20 +6330,17 @@ components:
         state:
           type: string
         study_type:
+          nullable: true
           type: string
         tags:
           $ref: '#/components/schemas/Tags'
       required:
       - id
       - name
-      - description
-      - business_code
-      - service_code
       - creation_date
       - last_modification
       - tags
       - state
-      - study_type
       - project_id
       type: object
     StudyCreateForm:
@@ -6352,8 +6355,10 @@ components:
           nullable: true
           type: integer
         business_code:
+          nullable: true
           type: string
         description:
+          nullable: true
           type: string
         expected_end_date:
           format: date
@@ -6362,6 +6367,7 @@ components:
         name:
           type: string
         service_code:
+          nullable: true
           type: string
         start_date:
           format: date
@@ -6370,6 +6376,7 @@ components:
         state:
           type: string
         study_type:
+          nullable: true
           type: string
         tags:
           $ref: '#/components/schemas/Tags'

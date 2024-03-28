@@ -2083,13 +2083,13 @@ export type Tags = string[];
 export type Project = {
   budget?: number | null;
   creation_date: string;
-  description: string;
-  funders: string;
+  description?: string | null;
+  funders?: string | null;
   id: number;
   image?: number | null;
   last_modification: string;
   name: string;
-  objectives: string;
+  objectives?: string | null;
   tags: Tags;
 };
 export type ProjectWithStudies = Project & {
@@ -2114,12 +2114,12 @@ export type Ordering =
   | 'LastModifiedAsc';
 export type ProjectCreateForm = {
   budget?: number | null;
-  description?: string;
-  funders?: string;
+  description?: string | null;
+  funders?: string | null;
   /** The id of the image document */
   image?: number | null;
   name: string;
-  objectives?: string;
+  objectives?: string | null;
   tags?: Tags;
 };
 export type ProjectPatchForm = {
@@ -2135,18 +2135,18 @@ export type ProjectPatchForm = {
 export type Study = {
   actual_end_date?: string | null;
   budget?: number | null;
-  business_code: string;
+  business_code?: string | null;
   creation_date: string;
-  description: string;
+  description?: string | null;
   expected_end_date?: string | null;
   id: number;
   last_modification: string;
   name: string;
   project_id: number;
-  service_code: string;
+  service_code?: string | null;
   start_date?: string | null;
   state: string;
-  study_type: string;
+  study_type?: string | null;
   tags: Tags;
 };
 export type StudyWithScenarios = Study & {
@@ -2169,14 +2169,14 @@ export type StudyResponse = Study & {
 export type StudyCreateForm = {
   actual_end_date?: string | null;
   budget?: number | null;
-  business_code?: string;
-  description?: string;
+  business_code?: string | null;
+  description?: string | null;
   expected_end_date?: string | null;
   name: string;
-  service_code?: string;
+  service_code?: string | null;
   start_date?: string | null;
   state: string;
-  study_type?: string;
+  study_type?: string | null;
   tags?: Tags;
 };
 export type StudyPatchForm = {
