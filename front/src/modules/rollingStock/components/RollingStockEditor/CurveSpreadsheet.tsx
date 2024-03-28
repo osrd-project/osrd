@@ -49,8 +49,14 @@ const CurveSpreadsheet = ({
   const updateRollingStockCurve = (newCurve: DataSheetCurve[]) => {
     if (!selectedTractionMode || !effortCurves) return;
 
+    // Sort and format the curve for display
+    const sortedSpreadsheetValues = newCurve.map((item) => ({
+      speed: item.speed === null ? '' : item.speed,
+      effort: item.effort === null ? '' : item.effort,
+    }));
+
     // Format the new curve
-    const formattedCurve = formatCurve(newCurve);
+    const formattedCurve = formatCurve(sortedSpreadsheetValues);
 
     // Create the updated selected curve
     const updatedSelectedCurve = {
