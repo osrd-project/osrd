@@ -5,9 +5,11 @@ use crate::models::SpacingRequirement;
 use crate::modelsv2::train_schedule::{TrainSchedule, TrainScheduleChangeset};
 use crate::modelsv2::Model;
 use crate::schema::utils::Identifier;
-use crate::schema::v2::trainschedule::Distribution;
-use crate::schema::v2::trainschedule::TrainScheduleBase;
-
+use crate::schema::v2::trainschedule::{Distribution, TrainScheduleBase};
+use crate::views::v2::path::{
+    pathfinding_blocks, PathfindingError, PathfindingInput, PathfindingResult,
+};
+use crate::RollingStockModel;
 use crate::{DbPool, RedisClient};
 use actix_web::web::{Data, Json, Path, Query};
 use actix_web::{delete, get, post, put, HttpResponse};
@@ -29,6 +31,9 @@ crate::routes! {
             get,
             put,
             simulation_output,
+            "/path" => {
+                get_path
+            }
         }
     },
 }
@@ -45,6 +50,7 @@ crate::schemas! {
     SimulationSummaryResultResponse,
     CompleteReportTrain,
     ReportTrain,
+    TrainSchedulePathfindingRequest,
 }
 
 #[derive(Debug, Error, EditoastError)]
@@ -466,6 +472,71 @@ pub async fn simulations_summary(
     // TO DO
     // issue:x https://github.com/osrd-project/osrd/issues/6857
     Ok(Json(HashMap::new()))
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize, IntoParams, ToSchema)]
+pub struct TrainSchedulePathfindingRequest {
+    infra_id: i64,
+}
+
+/// Get a path from a trainschedule given an infrastructure id and a train schedule id
+#[utoipa::path(
+    tag = "train_schedulev2,pathfindingv2",
+    params(TrainScheduleIdParam, TrainSchedulePathfindingRequest),
+    responses(
+        (status = 200, description = "The path", body = PathfindingResult),
+        (status = 404, description = "Infrastructure or Train schedule not found")
+    )
+)]
+#[get("")]
+async fn get_path(
+    db_pool: Data<DbPool>,
+    redis_client: Data<RedisClient>,
+    train_schedule_id: Path<TrainScheduleIdParam>,
+    query: Query<TrainSchedulePathfindingRequest>,
+) -> Result<Json<PathfindingResult>> {
+    use crate::models::{Infra, Retrieve as RetrieveV1};
+    use crate::modelsv2::Retrieve;
+
+    let conn = &mut db_pool.get().await?;
+    let mut redis_conn = redis_client.get_connection().await?;
+
+    let inner_query = query.into_inner();
+    let infra_id = inner_query.infra_id;
+    let train_schedule_id = train_schedule_id.id;
+
+    match Infra::retrieve_conn(conn, infra_id).await? {
+        Some(infra) => infra,
+        None => return Err(PathfindingError::InfraNotFound { infra_id }.into()),
+    };
+    let train_schedule = TrainSchedule::retrieve_or_fail(conn, train_schedule_id, || {
+        TrainScheduleError::NotFound { train_schedule_id }
+    })
+    .await?;
+
+    let rolling_stock_name = train_schedule.rolling_stock_name.clone();
+    let Some(rolling_stock) = RollingStockModel::retrieve(conn, rolling_stock_name.clone()).await?
+    else {
+        return Ok(Json(PathfindingResult::RollingStockNotFound {
+            rolling_stock_name,
+        }));
+    };
+
+    let path_input = PathfindingInput {
+        rolling_stock_loading_gauge: serde_json::from_str(&rolling_stock.loading_gauge)?,
+        rolling_stock_is_thermal: rolling_stock.has_thermal_curves(),
+        rolling_stock_supported_electrification: rolling_stock.supported_electrification(),
+        rolling_stock_supported_signaling_systems: rolling_stock.supported_signaling_systems.0,
+        path_items: train_schedule
+            .path
+            .into_iter()
+            .map(|item| item.location)
+            .collect(),
+    };
+
+    Ok(Json(
+        pathfinding_blocks(conn, &mut redis_conn, infra_id, &path_input).await?,
+    ))
 }
 
 #[cfg(test)]
