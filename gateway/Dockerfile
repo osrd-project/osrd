@@ -29,6 +29,8 @@ FROM chef AS testing_env
 RUN rustup component add llvm-tools && \
     rustup component add rustfmt && \
     cargo install grcov
+RUN curl --location --output /tmp/cargo-tomlfmt.tar.gz https://github.com/tbrand/cargo-tomlfmt/releases/download/v0.1.4/cargo-tomlfmt-v0.1.4-x86_64-unknown-linux-musl.tar.gz
+RUN tar --extract --verbose --gzip --file /tmp/cargo-tomlfmt.tar.gz --directory /usr/local/bin/ cargo-tomlfmt
 COPY --from=planner /app/recipe.json recipe.json
 
 ENV RUSTFLAGS="-Cinstrument-coverage"

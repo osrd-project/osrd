@@ -450,13 +450,24 @@ jobs:
 
           exit $(docker wait editoast-doc)
 
-      - name: Format check
+      - name: Format check (Rust)
         run: |
-          docker run --name=editoast-format --net=host -v $PWD/output:/output \
+          docker run --name=editoast-format-rust --net=host -v $PWD/output:/output \
             ${{ fromJSON(needs.build.outputs.stable_tags).editoast-test }} \
             cargo fmt --check
 
-          exit $(docker wait editoast-format)
+          exit $(docker wait editoast-format-rust)
+
+      - name: Format check (TOML)
+        run: |
+          find editoast -name Cargo.toml | sed 's+editoast+/app+' | while read CARGO_TOML
+          do
+            docker run --name=editoast-format-toml --net=host -v $PWD/output:/output \
+              ${{ fromJSON(needs.build.outputs.stable_tags).editoast-test }} \
+              cargo tomlfmt --dryrun --path $CARGO_TOML
+          done
+
+          exit $(docker wait editoast-format-toml)
 
       - name: Clippy check
         run: |
@@ -529,12 +540,22 @@ jobs:
 
           exit $(docker wait gateway-doc)
 
-      - name: Format check
+      - name: Format check (Rust)
         run: |
-          docker run --name=gateway-format --net=host -v $PWD/output:/output \
+          docker run --name=gateway-format-rust --net=host -v $PWD/output:/output \
             ${{ fromJSON(needs.build.outputs.stable_tags).gateway-test }} \
             cargo fmt --check
-          exit $(docker wait gateway-format)
+          exit $(docker wait gateway-format-rust)
+
+      - name: Format check (TOML)
+        run: |
+          find gateway -name Cargo.toml | sed 's+gateway+/app+' | while read CARGO_TOML
+          do
+            docker run --name=gateway-format-toml --net=host -v $PWD/output:/output \
+              ${{ fromJSON(needs.build.outputs.stable_tags).gateway-test }} \
+              cargo tomlfmt --dryrun --path $CARGO_TOML
+          done
+          exit $(docker wait gateway-format-toml)
 
   check_front:
     runs-on: ubuntu-latest
