@@ -8,28 +8,28 @@ edition = "2021"
 [lib]
 
 [dependencies]
-# common dependencies
-log.workspace = true
-futures-util.workspace = true
-dyn-clone.workspace = true
-either.workspace = true
-
-# common proxying infrastructure
-actix-web.workspace = true
-ipnet.workspace = true
-awc.workspace = true  # the http / ws client
-percent-encoding.workspace = true
-
-# header classifier
-smallvec.workspace = true
-phf = { workspace = true, features = ["macros"] } # static hop-by-hop header map
 
 # websocket proxy
-actix.workspace = true
-actix-web-actors.workspace = true
-bytestring.workspace = true
+actix = { workspace = true }
+
+# common proxying infrastructure
+actix-web = { workspace = true }
+actix-web-actors = { workspace = true }
+actix-web-opentelemetry = { workspace = true }
+awc = { workspace = true }  # the http / ws client
+bytestring = { workspace = true }
+dyn-clone = { workspace = true }
+either = { workspace = true }
+futures-util = { workspace = true }
+ipnet = { workspace = true }
+# common dependencies
+log = { workspace = true }
 
 # tracing / metrics
-opentelemetry.workspace = true
-actix-web-opentelemetry.workspace = true
-opentelemetry_sdk.workspace = true
+opentelemetry = { workspace = true }
+opentelemetry_sdk = { workspace = true }
+percent-encoding = { workspace = true }
+phf = { workspace = true, features = ["macros"] } # static hop-by-hop header map
+
+# header classifier
+smallvec = { workspace = true }

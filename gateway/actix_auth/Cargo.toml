@@ -8,20 +8,20 @@ edition = "2021"
 [lib]
 
 [dependencies]
+actix-session = { workspace = true }
+actix-web = { workspace = true }
+
+# bearer
+actix-web-httpauth = { workspace = true } # only used to parse Bearer auth headers
+dyn-clone = { workspace = true }
+futures-util = { workspace = true }
 
 # common dependencies
-log.workspace = true
-actix-web.workspace = true
-actix-session.workspace = true
-serde.workspace = true
-thiserror.workspace = true
-dyn-clone.workspace = true
-futures-util.workspace = true
+log = { workspace = true }
+openidconnect = { workspace = true, features = ["reqwest", "jwk-alg"] }
 
 # oidc
 reqwest = { workspace = true, features = ["json"] }
-openidconnect = { workspace = true, features = ["reqwest", "jwk-alg"] }
-url.workspace = true
-
-# bearer
-actix-web-httpauth.workspace = true # only used to parse Bearer auth headers
+serde = { workspace = true }
+thiserror = { workspace = true }
+url = { workspace = true }

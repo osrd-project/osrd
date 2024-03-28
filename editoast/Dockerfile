@@ -20,6 +20,7 @@ RUN apt update -yqq && apt install -yqq --no-install-recommends libgeos-dev mold
 # Instal diesel_cli
 RUN cargo install diesel_cli --no-default-features --features postgres
 
+
 ######################
 # Testing env: build #
 ######################
@@ -28,6 +29,8 @@ RUN rustup component add llvm-tools && \
     rustup component add rustfmt && \
     rustup component add clippy && \
     cargo install grcov
+RUN curl --location --output /tmp/cargo-tomlfmt.tar.gz https://github.com/tbrand/cargo-tomlfmt/releases/download/v0.1.4/cargo-tomlfmt-v0.1.4-x86_64-unknown-linux-musl.tar.gz
+RUN tar --extract --verbose --gzip --file /tmp/cargo-tomlfmt.tar.gz --directory /usr/local/bin/ cargo-tomlfmt
 COPY --from=planner /app/recipe.json recipe.json
 COPY --from=planner /app/editoast_derive/ editoast_derive
 COPY --from=test_data . /tests/data
